@@ -1,0 +1,1 @@
+This is a small test and the base for our project. To compile it, clone libigl (http://libigl.github.io/libigl/) as a sibling directory of this repository, then run make. The executable is called main.
