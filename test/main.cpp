@@ -1,5 +1,6 @@
 #include <igl/readOFF.h>
 #include <igl/viewer/Viewer.h>
+#include <iostream>
 
 Eigen::MatrixXd V;
 Eigen::MatrixXi F;
