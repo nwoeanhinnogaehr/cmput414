@@ -64,7 +64,7 @@ add_definitions(${LIBIGL_DEFINITIONS})
 ### Prepare the build environment
 
 add_executable(${PROJECT_NAME}_bin
-    main.cpp)
+    main.cpp collapse_edge.cpp)
 include_directories(${LIBIGL_INCLUDE_DIRS})
 add_definitions(${LIBIGL_DEFINITIONS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

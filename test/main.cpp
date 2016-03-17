@@ -1,5 +1,5 @@
 #include <igl/circulation.h>
-#include <igl/collapse_edge.h>
+#include "collapse_edge.h"
 #include <igl/edge_flaps.h>
 #include <igl/read_triangle_mesh.h>
 #include <igl/viewer/Viewer.h>
@@ -12,14 +12,21 @@ using namespace Eigen;
 using namespace igl;
 
 struct MeshModification {
+    int vi1;
+    int vi2;
     RowVectorXd v1;
     RowVectorXd v2;
-    RowVectorXd v3;
-    int fi;
-    RowVectorXi f;
-    MeshModification(RowVectorXd v1, RowVectorXd v2, RowVectorXd v3, int fi,
-                     RowVectorXi f)
-        : v1(v1), v2(v2), v3(v3), fi(fi), f(f) {}
+    int fi1;
+    int fi2;
+    int fi3;
+    RowVectorXi f1;
+    RowVectorXi f2;
+    RowVectorXi f3;
+    MeshModification(int vi1, int vi2, RowVectorXd v1, RowVectorXd v2, int fi1,
+                     int fi2, int fi3, RowVectorXi f1, RowVectorXi f2,
+                     RowVectorXi f3)
+        : vi1(vi1), vi2(vi2), v1(v1), v2(v2), fi1(fi1), fi2(fi2), fi3(fi3),
+          f1(f1), f2(f2), f3(f3) {}
 };
 
 int main(int argc, char *argv[]) {
@@ -90,20 +97,21 @@ int main(int argc, char *argv[]) {
             const int max_iter = 1;
             MatrixXd OOV = V;
             MatrixXi OOF = F;
+            MatrixXi OOE = E;
             for (int j = 0; j < max_iter; j++) {
+                int e, e1, e2, f1, f2, f3;
                 if (!collapse_edge(shortest_edge_and_midpoint, V, F, E, EMAP,
-                                   EF, EI, Q, Qit, C)) {
+                                   EF, EI, Q, Qit, C, e, e1, e2, f1, f2, f3)) {
                     break;
                 }
+                cout << e << ", " << e1 << ", " << e2 << ", " << f1 << ", "
+                     << f2 << endl;
+                mods.push_back(
+                    MeshModification(OOE(e, 0), OOE(e, 1), OOV.row(OOE(e, 0)),
+                                     OOV.row(OOE(e, 1)), f1, f2, f3,
+                                     OOF.row(f1), OOF.row(f2), OOF.row(f3)));
                 something_collapsed = true;
                 num_collapsed++;
-            }
-            for (int i = 0; i < F.rows(); i++) {
-                if (F(i, 0) == 0 && F(i, 1) == 0 && F(i, 2) == 0) {
-                    mods.push_back(
-                        MeshModification(OOV.row(OF(i, 0)), OOV.row(OOF(i, 1)),
-                                         OOV.row(OF(i, 2)), i, OOF.row(i)));
-                }
             }
             // ZEROD: F,E,EF,EI
             if (something_collapsed) {
@@ -119,15 +127,16 @@ int main(int argc, char *argv[]) {
         if (viewer.core.is_animating && !mods.empty()) {
             MeshModification mod = mods.back();
             mods.pop_back();
-            cout << "mod fi" << mod.fi << endl;
-            F.row(mod.fi) = mod.f;
-            V.row(F(mod.fi, 0)) = mod.v1;
-            V.row(F(mod.fi, 1)) = mod.v2;
-            V.row(F(mod.fi, 2)) = mod.v3;
+            F.row(mod.fi1) = mod.f1;
+            F.row(mod.fi2) = mod.f2;
+            F.row(mod.fi3) = mod.f3;
+            V.row(mod.vi1) = mod.v1;
+            V.row(mod.vi2) = mod.v2;
+
+            viewer.data.clear();
+            viewer.data.set_mesh(V, F);
+            viewer.data.set_face_based(true);
         }
-        viewer.data.clear();
-        viewer.data.set_mesh(V, F);
-        viewer.data.set_face_based(true);
     };
 
     const auto &key_down = [&](igl::viewer::Viewer &viewer, unsigned char key,
