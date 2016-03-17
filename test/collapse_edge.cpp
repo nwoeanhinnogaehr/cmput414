@@ -116,7 +116,8 @@ IGL_INLINE bool collapse_edge(const int e, const Eigen::RowVectorXd &p,
                        E(EMAP(f + m * ((v + 2) % 3)), flip2) == s);
                 E(EMAP(f + m * ((v + 2) % 3)), flip2) = s;
                 F(f, v) = s;
-                std::cout << "C" << f << ": " << v << "=" << s << std::endl;
+                std::cout << "Set F(" << f << "," << v << ") = " << s
+                          << std::endl;
                 a_f3 = f;
                 break;
             }
