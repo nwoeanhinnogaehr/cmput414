@@ -101,6 +101,7 @@ int main(int argc, char *argv[]) {
             MatrixXi OEF = EF;
             MatrixXi OEI = EI;
             VectorXi OEMAP = EMAP;
+            num_collapsed = 0;
             for (int j = 0; j < max_iter; j++) {
                 int e, e1, e2, f1, f2;
                 std::vector<int> faceInd, vertInd;
@@ -132,7 +133,7 @@ int main(int argc, char *argv[]) {
                 num_collapsed++;
             }
             if (something_collapsed) {
-                iters.push_back(max_iter);
+                iters.push_back(num_collapsed);
                 viewer.data.clear();
                 viewer.data.set_mesh(V, F);
                 viewer.data.set_face_based(true);
@@ -147,7 +148,6 @@ int main(int argc, char *argv[]) {
             int max_iter = iters.back();
             iters.pop_back();
             for (int i = 0; i < max_iter; i++) {
-                if (mods.empty()) break;
                 MeshModification mod = mods.back();
                 mods.pop_back();
 
