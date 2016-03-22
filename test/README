@@ -4,6 +4,8 @@ Compilation steps:
 
 cd ../..
 git clone --recursive https://github.com/libigl/libigl.git
+mkdir -p libigl/include/GL
+curl https://www.opengl.org/registry/api/GL/glcorearb.h > libigl/include/GL/glcorearb.h
 cd cmput414/test
 mkdir build
 cd build

@@ -5,28 +5,25 @@
 #include <Eigen/Core>
 #include <iostream>
 #include <set>
+#include <vector>
+#include <igl/circulation.h>
 
 using namespace std;
 using namespace Eigen;
 using namespace igl;
 
 struct MeshModification {
-    int vi1;
-    int vi2;
-    RowVectorXd v1;
-    RowVectorXd v2;
-    int fi1;
-    int fi2;
-    int fi3;
-    RowVectorXi f1;
-    RowVectorXi f2;
-    RowVectorXi f3;
-    MeshModification(int vi1, int vi2, RowVectorXd v1, RowVectorXd v2, int fi1,
-                     int fi2, int fi3, RowVectorXi f1, RowVectorXi f2,
-                     RowVectorXi f3)
-        : vi1(vi1), vi2(vi2), v1(v1), v2(v2), fi1(fi1), fi2(fi2), fi3(fi3),
-          f1(f1), f2(f2), f3(f3) {}
+  int vi1;
+  int vi2;
+  RowVectorXd v1;
+  RowVectorXd v2;
+  std::vector<int> faceInd;
+  MatrixXi faces;
+  MeshModification(int vi1, int vi2, RowVectorXd v1, RowVectorXd v2,
+		   std::vector<int> faceInd, MatrixXi faces)
+    : vi1(vi1), vi2(vi2), v1(v1), v2(v2),faceInd(faceInd), faces(faces) {}
 };
+
 
 int main(int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " [filename.(off|obj|ply)]" << endl;
@@ -102,22 +99,34 @@ int main(int argc, char *argv[]) {
             MatrixXd OOV = V;
             MatrixXi OOF = F;
             MatrixXi OOE = E;
+            MatrixXi OEF = EF;
+            MatrixXi OEI = EI;
+            VectorXi OEMAP = EMAP;
             for (int j = 0; j < max_iter; j++) {
-                int e, e1, e2, f1, f2, f3;
+	      int e, e1, e2, f1, f2, f3;
+	      std::vector<int> faceInd;
+	      
                 if (!collapse_edge(shortest_edge_and_midpoint, V, F, E, EMAP,
-                                   EF, EI, Q, Qit, C, e, e1, e2, f1, f2, f3)) {
+                                   EF, EI, Q, Qit, C, e, e1, e2, f1, f2, faceInd)) {
                     break;
                 }
-                cout << e << ", " << e1 << ", " << e2 << ", " << f1 << ", "
-                     << f2 << endl;
+		
+		MatrixXi faces(faceInd.size() + 2, 3);
+		faceInd.push_back(f1);
+		faceInd.push_back(f2);
+		for(int i = 0; i < faceInd.size(); i++) {
+		  faces.row(i) = OOF.row(faceInd[i]);
+		  cout << "ffF" << faces.row(i) << endl;
+		}
+
+
+		
                 mods.push_back(
                     MeshModification(OOE(e, 0), OOE(e, 1), OOV.row(OOE(e, 0)),
-                                     OOV.row(OOE(e, 1)), f1, f2, f3,
-                                     OOF.row(f1), OOF.row(f2), OOF.row(f3)));
+                                     OOV.row(OOE(e, 1)), faceInd, faces));
                 something_collapsed = true;
                 num_collapsed++;
             }
-            // ZEROD: F,E,EF,EI
             if (something_collapsed) {
                 viewer.data.clear();
                 viewer.data.set_mesh(V, F);
@@ -128,18 +137,27 @@ int main(int argc, char *argv[]) {
     };
 
     const auto &uncollapse_edges = [&](igl::viewer::Viewer &viewer) -> bool {
-        if (viewer.core.is_animating && !mods.empty()) {
+        if (viewer.core.is_animating && !mods.empty()) {            
+            
+            
             MeshModification mod = mods.back();
             mods.pop_back();
-            F.row(mod.fi1) = mod.f1;
-            F.row(mod.fi2) = mod.f2;
-            F.row(mod.fi3) = mod.f3;
             V.row(mod.vi1) = mod.v1;
             V.row(mod.vi2) = mod.v2;
 
+	    for(int i = 0; i < mod.faceInd.size(); i++) {
+	      F.row(mod.faceInd[i]) = mod.faces.row(i);
+	    }
+            
+         
+    
             viewer.data.clear();
             viewer.data.set_mesh(V, F);
             viewer.data.set_face_based(true);
+
+
+
+                
         }
     };
 

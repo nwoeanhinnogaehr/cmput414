@@ -1,2 +1,2 @@
 # cmput414
-# super rad bros
+# go check out the test directory

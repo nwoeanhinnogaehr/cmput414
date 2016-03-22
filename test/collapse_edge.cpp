@@ -17,7 +17,7 @@ IGL_INLINE bool collapse_edge(const int e, const Eigen::RowVectorXd &p,
                               Eigen::MatrixXi &E, Eigen::VectorXi &EMAP,
                               Eigen::MatrixXi &EF, Eigen::MatrixXi &EI,
                               int &a_e1, int &a_e2, int &a_f1, int &a_f2,
-                              int &a_f3) {
+                              std::vector<int> &faceInd) {
     // Assign this to 0 rather than, say, -1 so that deleted elements will get
     // draw as degenerate elements at vertex 0 (which should always exist and
     // never get collapsed to anything else since it is the smallest index)
@@ -118,7 +118,7 @@ IGL_INLINE bool collapse_edge(const int e, const Eigen::RowVectorXd &p,
                 F(f, v) = s;
                 std::cout << "Set F(" << f << "," << v << ") = " << s
                           << std::endl;
-                a_f3 = f;
+		faceInd.push_back(f);
                 break;
             }
         }
@@ -134,7 +134,8 @@ IGL_INLINE bool collapse_edge(const int e, const Eigen::RowVectorXd &p,
                               Eigen::MatrixXi &E, Eigen::VectorXi &EMAP,
                               Eigen::MatrixXi &EF, Eigen::MatrixXi &EI) {
     int e1, e2, f1, f2, f3;
-    return collapse_edge(e, p, V, F, E, EMAP, EF, EI, e1, e2, f1, f2, f3);
+    std::vector<int> faceInd;
+    return collapse_edge(e, p, V, F, E, EMAP, EF, EI, e1, e2, f1, f2, faceInd);
 }
 
 IGL_INLINE bool collapse_edge(
@@ -148,9 +149,10 @@ IGL_INLINE bool collapse_edge(
     std::set<std::pair<double, int>> &Q,
     std::vector<std::set<std::pair<double, int>>::iterator> &Qit,
     Eigen::MatrixXd &C) {
-    int e, e1, e2, f1, f2, f3;
+    int e, e1, e2, f1, f2;
+    std::vector<int> faceInd;
     return collapse_edge(cost_and_placement, V, F, E, EMAP, EF, EI, Q, Qit, C,
-                         e, e1, e2, f1, f2, f3);
+                         e, e1, e2, f1, f2, faceInd);
 }
 
 IGL_INLINE bool collapse_edge(
@@ -163,7 +165,7 @@ IGL_INLINE bool collapse_edge(
     Eigen::VectorXi &EMAP, Eigen::MatrixXi &EF, Eigen::MatrixXi &EI,
     std::set<std::pair<double, int>> &Q,
     std::vector<std::set<std::pair<double, int>>::iterator> &Qit,
-    Eigen::MatrixXd &C, int &e, int &e1, int &e2, int &f1, int &f2, int &f3) {
+    Eigen::MatrixXd &C, int &e, int &e1, int &e2, int &f1, int &f2, std::vector<int> &faceInd) {
     using namespace Eigen;
     if (Q.empty()) {
         // no edges to collapse
@@ -181,7 +183,7 @@ IGL_INLINE bool collapse_edge(
     std::vector<int> Nd = circulation(e, false, F, E, EMAP, EF, EI);
     N.insert(N.begin(), Nd.begin(), Nd.end());
     const bool collapsed =
-        collapse_edge(e, C.row(e), V, F, E, EMAP, EF, EI, e1, e2, f1, f2, f3);
+        collapse_edge(e, C.row(e), V, F, E, EMAP, EF, EI, e1, e2, f1, f2, faceInd);
     if (collapsed) {
         // Erase the two, other collapsed edges
         Q.erase(Qit[e1]);
