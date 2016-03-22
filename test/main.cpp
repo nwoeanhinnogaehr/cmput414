@@ -13,15 +13,13 @@ using namespace Eigen;
 using namespace igl;
 
 struct MeshModification {
-    int vi1;
-    int vi2;
-    RowVectorXd v1;
-    RowVectorXd v2;
+    std::vector<int> vertInd;
+    MatrixXd verts;
     std::vector<int> faceInd;
     MatrixXi faces;
-    MeshModification(int vi1, int vi2, RowVectorXd v1, RowVectorXd v2,
+    MeshModification(std::vector<int> vertInd, MatrixXd verts,
                      std::vector<int> faceInd, MatrixXi faces)
-        : vi1(vi1), vi2(vi2), v1(v1), v2(v2), faceInd(faceInd), faces(faces) {}
+        : vertInd(vertInd), verts(verts), faceInd(faceInd), faces(faces) {}
 };
 
 int main(int argc, char *argv[]) {
@@ -95,7 +93,7 @@ int main(int argc, char *argv[]) {
             bool something_collapsed = false;
             // collapse edge
             const int max_iter = std::ceil(0.1 * Q.size());
-            ;
+
             MatrixXd OOV = V;
             MatrixXi OOF = F;
             MatrixXi OOE = E;
@@ -103,8 +101,8 @@ int main(int argc, char *argv[]) {
             MatrixXi OEI = EI;
             VectorXi OEMAP = EMAP;
             for (int j = 0; j < max_iter; j++) {
-                int e, e1, e2, f1, f2, f3;
-                std::vector<int> faceInd;
+                int e, e1, e2, f1, f2;
+                std::vector<int> faceInd, vertInd;
 
                 if (!collapse_edge(shortest_edge_and_midpoint, V, F, E, EMAP,
                                    EF, EI, Q, Qit, C, e, e1, e2, f1, f2,
@@ -120,9 +118,15 @@ int main(int argc, char *argv[]) {
                     cout << "ffF" << faces.row(i) << endl;
                 }
 
+                MatrixXd verts(2, 3);
+                vertInd.push_back(OOE(e, 0));
+                vertInd.push_back(OOE(e, 1));
+                for (int i = 0; i < vertInd.size(); i++) {
+                    verts.row(i) = OOV.row(vertInd[i]);
+                }
+
                 mods.push_back(
-                    MeshModification(OOE(e, 0), OOE(e, 1), OOV.row(OOE(e, 0)),
-                                     OOV.row(OOE(e, 1)), faceInd, faces));
+                    MeshModification(vertInd, verts, faceInd, faces));
                 something_collapsed = true;
                 num_collapsed++;
             }
@@ -140,8 +144,10 @@ int main(int argc, char *argv[]) {
 
             MeshModification mod = mods.back();
             mods.pop_back();
-            V.row(mod.vi1) = mod.v1;
-            V.row(mod.vi2) = mod.v2;
+
+            for (int i = 0; i < mod.vertInd.size(); i++) {
+                V.row(mod.vertInd[i]) = mod.verts.row(i);
+            }
 
             for (int i = 0; i < mod.faceInd.size(); i++) {
                 F.row(mod.faceInd[i]) = mod.faces.row(i);
