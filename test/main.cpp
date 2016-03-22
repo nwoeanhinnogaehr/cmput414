@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
     MatrixXd C;
     int num_collapsed;
     std::vector<MeshModification> mods;
+    std::vector<int> iters;
 
     // Function for computing cost of collapsing edge (lenght) and placement
     // (midpoint)
@@ -131,6 +132,7 @@ int main(int argc, char *argv[]) {
                 num_collapsed++;
             }
             if (something_collapsed) {
+                iters.push_back(max_iter);
                 viewer.data.clear();
                 viewer.data.set_mesh(V, F);
                 viewer.data.set_face_based(true);
@@ -140,17 +142,22 @@ int main(int argc, char *argv[]) {
     };
 
     const auto &uncollapse_edges = [&](igl::viewer::Viewer &viewer) -> bool {
-        if (viewer.core.is_animating && !mods.empty()) {
+        if (viewer.core.is_animating && !mods.empty() && !iters.empty()) {
 
-            MeshModification mod = mods.back();
-            mods.pop_back();
+            int max_iter = iters.back();
+            iters.pop_back();
+            for (int i = 0; i < max_iter; i++) {
+                if (mods.empty()) break;
+                MeshModification mod = mods.back();
+                mods.pop_back();
 
-            for (int i = 0; i < mod.vertInd.size(); i++) {
-                V.row(mod.vertInd[i]) = mod.verts.row(i);
-            }
+                for (int i = 0; i < mod.vertInd.size(); i++) {
+                    V.row(mod.vertInd[i]) = mod.verts.row(i);
+                }
 
-            for (int i = 0; i < mod.faceInd.size(); i++) {
-                F.row(mod.faceInd[i]) = mod.faces.row(i);
+                for (int i = 0; i < mod.faceInd.size(); i++) {
+                    F.row(mod.faceInd[i]) = mod.faces.row(i);
+                }
             }
 
             viewer.data.clear();
