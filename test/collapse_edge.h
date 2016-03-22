@@ -45,7 +45,7 @@ IGL_INLINE bool collapse_edge(const int e, const Eigen::RowVectorXd &p,
                               Eigen::MatrixXi &E, Eigen::VectorXi &EMAP,
                               Eigen::MatrixXi &EF, Eigen::MatrixXi &EI,
                               int &a_e1, int &a_e2, int &a_f1, int &a_f2,
-                              int &a_f3);
+                              std::vector<int> &faceInd);
 IGL_INLINE bool collapse_edge(const int e, const Eigen::RowVectorXd &p,
                               Eigen::MatrixXd &V, Eigen::MatrixXi &F,
                               Eigen::MatrixXi &E, Eigen::VectorXi &EMAP,
@@ -80,7 +80,7 @@ IGL_INLINE bool collapse_edge(
     Eigen::VectorXi &EMAP, Eigen::MatrixXi &EF, Eigen::MatrixXi &EI,
     std::set<std::pair<double, int>> &Q,
     std::vector<std::set<std::pair<double, int>>::iterator> &Qit,
-    Eigen::MatrixXd &C, int &e, int &e1, int &e2, int &f1, int &f2, int &f3);
+    Eigen::MatrixXd &C, int &e, int &e1, int &e2, int &f1, int &f2, std::vector<int> &faceInd);
 
 #ifndef IGL_STATIC_LIBRARY
 #include "collapse_edge.cpp"
