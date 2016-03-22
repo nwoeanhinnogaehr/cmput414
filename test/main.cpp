@@ -1,4 +1,3 @@
-#include <igl/circulation.h>
 #include "collapse_edge.h"
 #include <igl/edge_flaps.h>
 #include <igl/read_triangle_mesh.h>
@@ -64,6 +63,9 @@ int main(int argc, char *argv[]) {
         const Eigen::MatrixXi &E, const Eigen::VectorXi & /*EMAP*/,
         const Eigen::MatrixXi & /*EF*/, const Eigen::MatrixXi & /*EI*/,
         double &cost, RowVectorXd &p) {
+        // manhattan
+        //cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
+        // euclidean
         cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
         p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     };
@@ -96,7 +98,7 @@ int main(int argc, char *argv[]) {
         if (viewer.core.is_animating && !Q.empty()) {
             bool something_collapsed = false;
             // collapse edge
-            const int max_iter = 1;
+            const int max_iter = std::ceil(0.1 * Q.size());;
             MatrixXd OOV = V;
             MatrixXi OOF = F;
             MatrixXi OOE = E;
