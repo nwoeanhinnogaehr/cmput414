@@ -30,9 +30,11 @@ struct MeshModification {
 };
 
 int main(int argc, char *argv[]) {
-    cout << "Usage: ./703_Decimation_bin [filename.(off|obj|ply)]" << endl;
+    cout << "Usage: " << argv[0] << " [filename.(off|obj|ply)]" << endl;
     cout << "  [space]  toggle animation." << endl;
     cout << "  'r'  reset." << endl;
+    cout << "  '1'  edge collapse." << endl;
+    cout << "  '2'  vertex split." << endl;
     // Load a closed manifold mesh
     string filename("fertility.off");
     if (argc >= 2) {
