@@ -6,7 +6,7 @@
 #include <iostream>
 #include <set>
 #include <vector>
-#include <igl/circulation.h>
+#include <igl/per_face_normals.h>
 
 using namespace std;
 using namespace Eigen;
@@ -36,6 +36,10 @@ int main(int argc, char *argv[]) {
     MatrixXd V, OV;
     MatrixXi F, OF;
     read_triangle_mesh(filename, OV, OF);
+
+    // compute normals
+    MatrixXd normals;
+    per_face_normals(OV, OF, normals);
 
     igl::viewer::Viewer viewer;
 
