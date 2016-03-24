@@ -8,7 +8,7 @@
 #include <vector>
 #include <igl/per_face_normals.h>
 #include <GLFW/glfw3.h>
-#include <stb_image_write.h>
+#include <stb_image/stb_image_write.h>
 
 using namespace std;
 using namespace Eigen;
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     std::vector<MeshModification> mods;
     std::vector<int> iters;
 
-    // Function for computing cost of collapsing edge (lenght) and placement
+    // Function for computing cost of collapsing edge (length) and placement
     // (midpoint)
     const auto &shortest_edge_and_midpoint = [](
         const int e, const Eigen::MatrixXd &V, const Eigen::MatrixXi & /*F*/,
@@ -74,9 +74,9 @@ int main(int argc, char *argv[]) {
         const Eigen::MatrixXi & /*EF*/, const Eigen::MatrixXi & /*EI*/,
         double &cost, RowVectorXd &p) {
         // manhattan
-        // cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
+        cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
         // euclidean
-        cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
+        //cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
         p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     };
 

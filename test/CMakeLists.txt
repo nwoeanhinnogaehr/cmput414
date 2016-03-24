@@ -16,6 +16,7 @@ option(LIBIGL_WITH_MATLAB           "Use Matlab"         OFF) # This option is n
 option(LIBIGL_WITH_MOSEK            "Use MOSEK"          OFF) # This option is not supported yet
 option(LIBIGL_WITH_BBW              "Use BBW"            ON)
 option(LIBIGL_WITH_OPENGL_AND_PNG   "Use OpenGL"         ON)
+option(LIBIGL_WITH_PNG				"Use PNG"			 ON)
 option(LIBIGL_WITH_TETGEN           "Use Tetgen"         ON)
 option(LIBIGL_WITH_TRIANGLE         "Use Triangle"       ON)
 option(LIBIGL_WITH_XML              "Use XML"            ON)
