@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     std::vector<MeshModification> mods;
     std::vector<int> iters;
 
-    // Function for computing cost of collapsing edge (lenght) and placement
+    // Function for computing cost of collapsing edge (length) and placement
     // (midpoint)
     const auto &shortest_edge_and_midpoint = [](
         const int e, const Eigen::MatrixXd &V, const Eigen::MatrixXi & /*F*/,
