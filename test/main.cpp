@@ -206,6 +206,7 @@ int main(int argc, char *argv[]) {
             save_screenshot(viewer, "after.png");
             break;
         case 'S':
+        case 's':
             save_screenshot(viewer, "screen.png");
             cout << "saved screen to screen.png" << endl;
             break;
