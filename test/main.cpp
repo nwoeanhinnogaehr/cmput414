@@ -7,6 +7,8 @@
 #include <set>
 #include <vector>
 #include <igl/per_face_normals.h>
+#include <GLFW/glfw3.h>
+#include <stb_image_write.h>
 
 using namespace std;
 using namespace Eigen;
@@ -21,6 +23,15 @@ struct MeshModification {
                      std::vector<int> faceInd, MatrixXi faces)
         : vertInd(vertInd), verts(verts), faceInd(faceInd), faces(faces) {}
 };
+
+void save_screenshot(viewer::Viewer &viewer, char *filename) {
+    int width, height;
+    glfwGetWindowSize(viewer.window, &width, &height);
+    char *pixels = new char[3 * width * height];
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    stbi_write_png(filename, width, height, 3, pixels, 3 * width);
+    delete[] pixels;
+}
 
 int main(int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " [filename.(off|obj|ply)]" << endl;
@@ -185,6 +196,10 @@ int main(int argc, char *argv[]) {
             break;
         case '2':
             uncollapse_edges(viewer);
+            break;
+        case 'S':
+            save_screenshot(viewer, "screen.png");
+            cout << "saved screen to screen.png" << endl;
             break;
         default:
             return false;
