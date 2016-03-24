@@ -210,6 +210,7 @@ int main(int argc, char *argv[]) {
     reset();
     viewer.core.is_animating = true;
     viewer.callback_key_pressed = key_down;
+    viewer.core.show_lines = false;
     // viewer.callback_pre_draw = pre_draw;
     return viewer.launch();
 }
