@@ -198,6 +198,7 @@ int main(int argc, char *argv[]) {
             uncollapse_edges(viewer);
             break;
         case 'S':
+        case 's':
             save_screenshot(viewer, "screen.png");
             cout << "saved screen to screen.png" << endl;
             break;
