@@ -6,7 +6,9 @@
 #include <iostream>
 #include <set>
 #include <vector>
-#include <igl/circulation.h>
+#include <igl/per_face_normals.h>
+#include <GLFW/glfw3.h>
+#include <stb_image_write.h>
 
 using namespace std;
 using namespace Eigen;
@@ -22,6 +24,15 @@ struct MeshModification {
         : vertInd(vertInd), verts(verts), faceInd(faceInd), faces(faces) {}
 };
 
+void save_screenshot(viewer::Viewer &viewer, char *filename) {
+    int width, height;
+    glfwGetWindowSize(viewer.window, &width, &height);
+    char *pixels = new char[3 * width * height];
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    stbi_write_png(filename, width, height, 3, pixels, 3 * width);
+    delete[] pixels;
+}
+
 int main(int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " [filename.(off|obj|ply)]" << endl;
     cout << "  [space]  toggle animation." << endl;
@@ -36,6 +47,10 @@ int main(int argc, char *argv[]) {
     MatrixXd V, OV;
     MatrixXi F, OF;
     read_triangle_mesh(filename, OV, OF);
+
+    // compute normals
+    MatrixXd normals;
+    per_face_normals(OV, OF, normals);
 
     igl::viewer::Viewer viewer;
 
@@ -55,7 +70,7 @@ int main(int argc, char *argv[]) {
     std::vector<MeshModification> mods;
     std::vector<int> iters;
 
-    // Function for computing cost of collapsing edge (lenght) and placement
+    // Function for computing cost of collapsing edge (length) and placement
     // (midpoint)
     // const auto &shortest_edge_and_midpoint = [](
     //     const int e, const Eigen::MatrixXd &V, const Eigen::MatrixXi & /*F*/,
@@ -75,26 +90,33 @@ int main(int argc, char *argv[]) {
         const Eigen::MatrixXi &E, const Eigen::VectorXi &EMAP /*EMAP*/,
         const Eigen::MatrixXi &EF /*EF*/, const Eigen::MatrixXi &EI /*EI*/,
         double &cost, RowVectorXd &p) {
-
-      const int eflip = E(e, 0) > E(e, 1);
-
-      const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
-      p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-      Eigen::RowVectorXd pointy(3);
-      pointy.setZero();
-      std::set<int> newEdges;
-      for( int i = 0; i < nV2Fd.size(); i++) {
-	for( int j = 0; j < 3; j++) {
-	  int curVert = F.row(nV2Fd[i])[j];
-	  if( curVert != E(e, 0) || curVert != E(e, 1)){
-	    if(newEdges.insert(curVert).second){
-	      pointy = (V.row(curVert) - p) + pointy;
+        // manhattan
+        //cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
+        // euclidean
+        //cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
+        //p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+        // vectorSum
+	const int eflip = E(e, 0) > E(e, 1);
+	const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
+	p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+	Eigen::RowVectorXd pointy(3);
+	pointy.setZero();
+	std::set<int> newEdges;
+	for( int i = 0; i < nV2Fd.size(); i++) {
+	  for( int j = 0; j < 3; j++) {
+	    int curVert = F.row(nV2Fd[i])[j];
+	    if( curVert != E(e, 0) || curVert != E(e, 1)){
+	      if(newEdges.insert(curVert).second){
+		pointy = (V.row(curVert) - p) + pointy;
+	      }
 	    }
 	  }
 	}
-      }
-      cost = (pointy).norm();
+	cost = (pointy).norm();
+	
+	
     };
+
  
     // Function to reset original mesh and data structures
     const auto &reset = [&]() {
@@ -124,7 +146,7 @@ int main(int argc, char *argv[]) {
         if (viewer.core.is_animating && !Q.empty()) {
             bool something_collapsed = false;
             // collapse edge
-            const int max_iter = std::ceil(0.1 * Q.size());
+            const int max_iter = std::ceil(1.0 * Q.size());
 
             MatrixXd OOV = V;
             MatrixXi OOF = F;
@@ -132,6 +154,7 @@ int main(int argc, char *argv[]) {
             MatrixXi OEF = EF;
             MatrixXi OEI = EI;
             VectorXi OEMAP = EMAP;
+            num_collapsed = 0;
             for (int j = 0; j < max_iter; j++) {
                 int e, e1, e2, f1, f2;
                 std::vector<int> faceInd, vertInd;
@@ -147,7 +170,9 @@ int main(int argc, char *argv[]) {
                 faceInd.push_back(f2);
                 for (int i = 0; i < faceInd.size(); i++) {
                     faces.row(i) = OOF.row(faceInd[i]);
+
                     // cout << "ffF" << faces.row(i) << endl;
+
                 }
 
                 MatrixXd verts(2, 3);
@@ -163,7 +188,7 @@ int main(int argc, char *argv[]) {
                 num_collapsed++;
             }
             if (something_collapsed) {
-                iters.push_back(max_iter);
+                iters.push_back(num_collapsed);
                 viewer.data.clear();
                 viewer.data.set_mesh(V, F);
                 viewer.data.set_face_based(true);
@@ -178,7 +203,6 @@ int main(int argc, char *argv[]) {
             int max_iter = iters.back();
             iters.pop_back();
             for (int i = 0; i < max_iter; i++) {
-                if (mods.empty()) break;
                 MeshModification mod = mods.back();
                 mods.pop_back();
 
@@ -197,6 +221,10 @@ int main(int argc, char *argv[]) {
         }
     };
 
+    const auto &pre_draw = [&](igl::viewer::Viewer &viewer) -> bool {
+
+    };
+
     const auto &key_down = [&](igl::viewer::Viewer &viewer, unsigned char key,
                                int mod) -> bool {
         switch (key) {
@@ -213,6 +241,28 @@ int main(int argc, char *argv[]) {
         case '2':
             uncollapse_edges(viewer);
             break;
+        case '3':
+            reset();
+            viewer.draw();
+            save_screenshot(viewer, "before.png");
+            char fn[100];
+            char command[512];
+            for (int i = 0; i < 100; i++) {
+                collapse_edges(viewer);
+                viewer.draw();
+                sprintf(fn, "after%03d.png", i);
+                save_screenshot(viewer, fn);
+                sprintf(command, "compare before.png after%03d.png -compose src diff%03d.png", i, i);
+                system(command);
+                sprintf(command, "compare after%03d.png after%03d.png -compose src delta%03d.png", i, i-1, i);
+                system(command);
+            }
+            break;
+        case 'S':
+        case 's':
+            save_screenshot(viewer, "screen.png");
+            cout << "saved screen to screen.png" << endl;
+            break;
         default:
             return false;
         }
@@ -221,7 +271,8 @@ int main(int argc, char *argv[]) {
 
     reset();
     viewer.core.is_animating = true;
-    viewer.callback_key_down = key_down;
-    // viewer.callback_pre_draw = pre_draw;
+    viewer.callback_key_pressed = key_down;
+    viewer.core.show_lines = false;
+    viewer.callback_pre_draw = pre_draw;
     return viewer.launch();
 }
