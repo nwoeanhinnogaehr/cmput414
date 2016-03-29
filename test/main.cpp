@@ -8,7 +8,7 @@
 #include <vector>
 #include <igl/per_face_normals.h>
 #include <GLFW/glfw3.h>
-#include <stb_image/stb_image_write.h>
+#include <stb_image_write.h>
 
 using namespace std;
 using namespace Eigen;
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
                 faceInd.push_back(f2);
                 for (int i = 0; i < faceInd.size(); i++) {
                     faces.row(i) = OOF.row(faceInd[i]);
-                    cout << "ffF" << faces.row(i) << endl;
+                    //cout << "ffF" << faces.row(i) << endl;
                 }
 
                 MatrixXd verts(2, 3);
@@ -181,6 +181,10 @@ int main(int argc, char *argv[]) {
         }
     };
 
+    const auto &pre_draw = [&](igl::viewer::Viewer &viewer) -> bool {
+
+    };
+
     const auto &key_down = [&](igl::viewer::Viewer &viewer, unsigned char key,
                                int mod) -> bool {
         switch (key) {
@@ -201,9 +205,18 @@ int main(int argc, char *argv[]) {
             reset();
             viewer.draw();
             save_screenshot(viewer, "before.png");
-            collapse_edges(viewer);
-            viewer.draw();
-            save_screenshot(viewer, "after.png");
+            char fn[100];
+            char command[512];
+            for (int i = 0; i < 100; i++) {
+                collapse_edges(viewer);
+                viewer.draw();
+                sprintf(fn, "after%03d.png", i);
+                save_screenshot(viewer, fn);
+                sprintf(command, "compare before.png after%03d.png -compose src diff%03d.png", i, i);
+                system(command);
+                sprintf(command, "compare after%03d.png after%03d.png -compose src delta%03d.png", i, i-1, i);
+                system(command);
+            }
             break;
         case 'S':
         case 's':
@@ -220,6 +233,6 @@ int main(int argc, char *argv[]) {
     viewer.core.is_animating = true;
     viewer.callback_key_pressed = key_down;
     viewer.core.show_lines = false;
-    // viewer.callback_pre_draw = pre_draw;
+    viewer.callback_pre_draw = pre_draw;
     return viewer.launch();
 }
