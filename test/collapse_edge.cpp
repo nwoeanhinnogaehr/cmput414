@@ -116,9 +116,9 @@ IGL_INLINE bool collapse_edge(const int e, const Eigen::RowVectorXd &p,
                        E(EMAP(f + m * ((v + 2) % 3)), flip2) == s);
                 E(EMAP(f + m * ((v + 2) % 3)), flip2) = s;
                 F(f, v) = s;
-                //std::cout << "Set F(" << f << "," << v << ") = " << s
-                          //<< std::endl;
-		faceInd.push_back(f);
+                // std::cout << "Set F(" << f << "," << v << ") = " << s
+                //          << std::endl;
+                faceInd.push_back(f);
                 break;
             }
         }
@@ -165,7 +165,8 @@ IGL_INLINE bool collapse_edge(
     Eigen::VectorXi &EMAP, Eigen::MatrixXi &EF, Eigen::MatrixXi &EI,
     std::set<std::pair<double, int>> &Q,
     std::vector<std::set<std::pair<double, int>>::iterator> &Qit,
-    Eigen::MatrixXd &C, int &e, int &e1, int &e2, int &f1, int &f2, std::vector<int> &faceInd) {
+    Eigen::MatrixXd &C, int &e, int &e1, int &e2, int &f1, int &f2,
+    std::vector<int> &faceInd) {
     using namespace Eigen;
     if (Q.empty()) {
         // no edges to collapse
@@ -182,8 +183,8 @@ IGL_INLINE bool collapse_edge(
     std::vector<int> N = circulation(e, true, F, E, EMAP, EF, EI);
     std::vector<int> Nd = circulation(e, false, F, E, EMAP, EF, EI);
     N.insert(N.begin(), Nd.begin(), Nd.end());
-    const bool collapsed =
-        collapse_edge(e, C.row(e), V, F, E, EMAP, EF, EI, e1, e2, f1, f2, faceInd);
+    const bool collapsed = collapse_edge(e, C.row(e), V, F, E, EMAP, EF, EI, e1,
+                                         e2, f1, f2, faceInd);
     if (collapsed) {
         // Erase the two, other collapsed edges
         Q.erase(Qit[e1]);
