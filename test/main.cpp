@@ -9,6 +9,7 @@
 #include <igl/per_face_normals.h>
 #include <GLFW/glfw3.h>
 #include <stb_image_write.h>
+#include <igl/circulation.h>
 
 using namespace std;
 using namespace Eigen;
@@ -34,11 +35,11 @@ void save_screenshot(viewer::Viewer &viewer, char *filename) {
 }
 
 void shortest_edge_and_midpoint(const int e, const Eigen::MatrixXd &V,
-                                const Eigen::MatrixXi & /*F*/,
+                                const Eigen::MatrixXi &F,
                                 const Eigen::MatrixXi &E,
-                                const Eigen::VectorXi & /*EMAP*/,
-                                const Eigen::MatrixXi & /*EF*/,
-                                const Eigen::MatrixXi & /*EI*/, double &cost,
+                                const Eigen::VectorXi &EMAP,
+                                const Eigen::MatrixXi &EF,
+                                const Eigen::MatrixXi &EI, double &cost,
                                 RowVectorXd &p) {
     // manhattan
     //cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
