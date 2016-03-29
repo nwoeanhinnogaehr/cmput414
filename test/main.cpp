@@ -33,6 +33,20 @@ void save_screenshot(viewer::Viewer &viewer, char *filename) {
     delete[] pixels;
 }
 
+void shortest_edge_and_midpoint(const int e, const Eigen::MatrixXd &V,
+                                const Eigen::MatrixXi & /*F*/,
+                                const Eigen::MatrixXi &E,
+                                const Eigen::VectorXi & /*EMAP*/,
+                                const Eigen::MatrixXi & /*EF*/,
+                                const Eigen::MatrixXi & /*EI*/, double &cost,
+                                RowVectorXd &p) {
+    // manhattan
+    cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
+    // euclidean
+    // cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
+    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+}
+
 int main(int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " [filename.(off|obj|ply)]" << endl;
     cout << "  [space]  toggle animation." << endl;
@@ -68,17 +82,6 @@ int main(int argc, char *argv[]) {
 
     // Function for computing cost of collapsing edge (length) and placement
     // (midpoint)
-    const auto &shortest_edge_and_midpoint = [](
-        const int e, const Eigen::MatrixXd &V, const Eigen::MatrixXi & /*F*/,
-        const Eigen::MatrixXi &E, const Eigen::VectorXi & /*EMAP*/,
-        const Eigen::MatrixXi & /*EF*/, const Eigen::MatrixXi & /*EI*/,
-        double &cost, RowVectorXd &p) {
-        // manhattan
-        cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
-        // euclidean
-        //cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
-        p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    };
 
     // Function to reset original mesh and data structures
     const auto &reset = [&]() {
@@ -132,7 +135,7 @@ int main(int argc, char *argv[]) {
                 faceInd.push_back(f2);
                 for (int i = 0; i < faceInd.size(); i++) {
                     faces.row(i) = OOF.row(faceInd[i]);
-                    //cout << "ffF" << faces.row(i) << endl;
+                    // cout << "ffF" << faces.row(i) << endl;
                 }
 
                 MatrixXd verts(2, 3);
@@ -181,10 +184,6 @@ int main(int argc, char *argv[]) {
         }
     };
 
-    const auto &pre_draw = [&](igl::viewer::Viewer &viewer) -> bool {
-
-    };
-
     const auto &key_down = [&](igl::viewer::Viewer &viewer, unsigned char key,
                                int mod) -> bool {
         switch (key) {
@@ -212,10 +211,16 @@ int main(int argc, char *argv[]) {
                 viewer.draw();
                 sprintf(fn, "after%03d.png", i);
                 save_screenshot(viewer, fn);
-                sprintf(command, "compare before.png after%03d.png -compose src diff%03d.png", i, i);
+                sprintf(command, "compare before.png after%03d.png -metric "
+                                 "PSNR diff%03d.png",
+                        i, i);
                 system(command);
-                sprintf(command, "compare after%03d.png after%03d.png -compose src delta%03d.png", i, i-1, i);
+                cout << endl;
+                sprintf(command, "compare after%03d.png after%03d.png -metric "
+                                 "PSNR delta%03d.png >> delta_info",
+                        i, i - 1, i);
                 system(command);
+                cout << endl;
             }
             break;
         case 'S':
@@ -233,6 +238,5 @@ int main(int argc, char *argv[]) {
     viewer.core.is_animating = true;
     viewer.callback_key_pressed = key_down;
     viewer.core.show_lines = false;
-    viewer.callback_pre_draw = pre_draw;
     return viewer.launch();
 }
