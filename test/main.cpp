@@ -8,7 +8,7 @@
 #include <vector>
 #include <igl/per_face_normals.h>
 #include <GLFW/glfw3.h>
-#include <stb_image/stb_image_write.h>
+#include <stb_image_write.h>
 
 using namespace std;
 using namespace Eigen;
