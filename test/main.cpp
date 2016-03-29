@@ -77,10 +77,11 @@ int main(int argc, char *argv[]) {
         double &cost, RowVectorXd &p) {
 
       const int eflip = E(e, 0) > E(e, 1);
-      // Important to grab neighbors of d before monkeying with edges
+
       const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
       p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-      VectorXd pointy = Vector3d(0.0, 0.0, 0.0);
+      Eigen::RowVectorXd pointy(3);
+      pointy.setZero();
       std::set<int> newEdges;
       for( int i = 0; i < nV2Fd.size(); i++) {
 	for( int j = 0; j < 3; j++) {
