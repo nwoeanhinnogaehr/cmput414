@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
         if (viewer.core.is_animating && !Q.empty()) {
             bool something_collapsed = false;
             // collapse edge
-            const int max_iter = std::ceil(0.1 * Q.size());
+            const int max_iter = std::ceil(1.0 * Q.size());
 
             MatrixXd OOV = V;
             MatrixXi OOF = F;
@@ -196,6 +196,14 @@ int main(int argc, char *argv[]) {
             break;
         case '2':
             uncollapse_edges(viewer);
+            break;
+        case '3':
+            reset();
+            viewer.draw();
+            save_screenshot(viewer, "before.png");
+            collapse_edges(viewer);
+            viewer.draw();
+            save_screenshot(viewer, "after.png");
             break;
         case 'S':
         case 's':
