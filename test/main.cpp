@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
             viewer.data.clear();
             viewer.data.set_mesh(V, F);
             viewer.data.set_face_based(true);
-            cout << "Unollapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
+            cout << "Uncollapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
         }
     };
 
@@ -245,20 +245,20 @@ int main(int argc, char *argv[]) {
         case '3':
             reset();
             viewer.draw();
-            save_screenshot(viewer, "before.png");
+            save_screenshot(viewer, "images/before.png");
             char fn[100];
             char command[512];
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i <= 100; i++) {
                 collapse_edges(viewer);
                 viewer.draw();
-                sprintf(fn, "after%03d.png", i);
+                sprintf(fn, "images/after%03d.png", i);
                 save_screenshot(viewer, fn);
-                sprintf(command, "composite before.png after%03d.png -compose difference "
-                                 "diff%03d.png ",
+                sprintf(command, "composite images/before.png images/after%03d.png -compose difference "
+                                 "images/diff%03d.png ",
                         i, i);
                 system(command);
-                sprintf(command, "composite after%03d.png after%03d.png -compose difference "
-                                 "delta%03d.png ",
+                sprintf(command, "composite images/after%03d.png images/after%03d.png -compose difference "
+                                 "images/delta%03d.png ",
                         i, i - 1, i);
                 system(command);
                 cout << "Step " << i << " / 100" << endl;
@@ -266,8 +266,8 @@ int main(int argc, char *argv[]) {
             break;
         case 'S':
         case 's':
-            save_screenshot(viewer, "screen.png");
-            cout << "saved screen to screen.png" << endl;
+            save_screenshot(viewer, "images/screen.png");
+            cout << "saved screen to images/screen.png" << endl;
             break;
         default:
             return false;
