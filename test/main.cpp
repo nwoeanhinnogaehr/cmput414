@@ -87,10 +87,6 @@ int main(int argc, char *argv[]) {
 
     igl::viewer::Viewer viewer;
 
-
-
-
-
     // Prepare array-based edge data structures and priority queue
     VectorXi EMAP;
     MatrixXi E, EF, EI;
@@ -232,16 +228,15 @@ int main(int argc, char *argv[]) {
                 viewer.draw();
                 sprintf(fn, "after%03d.png", i);
                 save_screenshot(viewer, fn);
-                sprintf(command, "compare before.png after%03d.png -metric "
-                                 "PSNR diff%03d.png",
+                sprintf(command, "composite before.png after%03d.png -compose difference "
+                                 "diff%03d.png ",
                         i, i);
                 system(command);
-                cout << endl;
-                sprintf(command, "compare after%03d.png after%03d.png -metric "
-                                 "PSNR delta%03d.png >> delta_info",
+                sprintf(command, "composite after%03d.png after%03d.png -compose difference "
+                                 "delta%03d.png ",
                         i, i - 1, i);
                 system(command);
-                cout << endl;
+                cout << "Step " << i << " / 100" << endl;
             }
             break;
         case 'S':
