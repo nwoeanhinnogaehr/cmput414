@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
         viewer.data.set_mesh(V, F);
         viewer.data.set_face_based(true);
     };
-
+    int decimationsTotal = 0;
     const auto &collapse_edges = [&](igl::viewer::Viewer &viewer) -> bool {
         // If animating then collapse 10% of edges
         if (viewer.core.is_animating && !Q.empty()) {
@@ -169,6 +169,8 @@ int main(int argc, char *argv[]) {
                                    faceInd)) {
                     break;
                 }
+
+                decimationsTotal++;
 
                 MatrixXi faces(faceInd.size() + 2, 3);
                 faceInd.push_back(f1);
@@ -205,9 +207,11 @@ int main(int argc, char *argv[]) {
 
             int max_iter = iters.back();
             iters.pop_back();
+
             for (int i = 0; i < max_iter; i++) {
                 MeshModification mod = mods.back();
                 mods.pop_back();
+                decimationsTotal--;
 
                 for (int i = 0; i < mod.vertInd.size(); i++) {
                     V.row(mod.vertInd[i]) = mod.verts.row(i);
@@ -236,9 +240,11 @@ int main(int argc, char *argv[]) {
             break;
         case '1':
             collapse_edges(viewer);
+            cout << "Collapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
             break;
         case '2':
             uncollapse_edges(viewer);
+            cout << "Unollapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
             break;
         case '3':
             reset();
