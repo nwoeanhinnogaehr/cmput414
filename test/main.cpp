@@ -14,6 +14,10 @@
 using namespace std;
 using namespace Eigen;
 using namespace igl;
+MatrixXd V, OV;
+MatrixXi F, OF;
+MatrixXd normals;
+
 
 struct MeshModification {
     std::vector<int> vertInd;
@@ -46,24 +50,41 @@ void shortest_edge_and_midpoint(const int e, const Eigen::MatrixXd &V,
     // euclidean
     // cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
     //p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+    // vectorsum 
+    // const int eflip = E(e, 0) > E(e, 1);
+    // const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
+    // p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+    // Eigen::RowVectorXd pointy(3);
+    // pointy.setZero();
+    // std::set<int> newEdges;
+    // for( int i = 0; i < nV2Fd.size(); i++) {
+    //   for( int j = 0; j < 3; j++) {
+    // 	int curVert = F.row(nV2Fd[i])[j];
+    // 	if( curVert != E(e, 0) || curVert != E(e, 1)){
+    // 	  if(newEdges.insert(curVert).second){
+    // 	    pointy = (V.row(curVert) - p) + pointy;
+    // 	  }
+    // 	}
+    //   }
+    // }
+    // cost = (pointy).norm();
 
-	const int eflip = E(e, 0) > E(e, 1);
-	const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
-	p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-	Eigen::RowVectorXd pointy(3);
-	pointy.setZero();
-	std::set<int> newEdges;
-	for( int i = 0; i < nV2Fd.size(); i++) {
-	  for( int j = 0; j < 3; j++) {
-	    int curVert = F.row(nV2Fd[i])[j];
-	    if( curVert != E(e, 0) || curVert != E(e, 1)){
-	      if(newEdges.insert(curVert).second){
-		pointy = (V.row(curVert) - p) + pointy;
-	      }
-	    }
-	  }
-	}
-	cost = (pointy).norm();
+       // compute normals
+
+    
+    const int eflip = E(e, 0) > E(e, 1);
+    const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
+    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+    Eigen::RowVectorXd pointy(3);
+    pointy.setZero();
+    std::set<int> newEdges;
+    for( int i = 0; i < nV2Fd.size(); i++) {
+      
+      pointy = normals.row(nV2Fd[i]) + pointy;
+    }
+    
+    cost = 1/((pointy).norm());	
+    
 }
 
 int main(int argc, char *argv[]) {
@@ -77,12 +98,10 @@ int main(int argc, char *argv[]) {
     if (argc >= 2) {
         filename = argv[1];
     }
-    MatrixXd V, OV;
-    MatrixXi F, OF;
+
     read_triangle_mesh(filename, OV, OF);
 
     // compute normals
-    MatrixXd normals;
     per_face_normals(OV, OF, normals);
 
     igl::viewer::Viewer viewer;
@@ -122,7 +141,7 @@ int main(int argc, char *argv[]) {
         viewer.data.set_mesh(V, F);
         viewer.data.set_face_based(true);
     };
-
+    int decimationsTotal = 0;
     const auto &collapse_edges = [&](igl::viewer::Viewer &viewer) -> bool {
         // If animating then collapse 10% of edges
         if (viewer.core.is_animating && !Q.empty()) {
@@ -146,6 +165,8 @@ int main(int argc, char *argv[]) {
                                    faceInd)) {
                     break;
                 }
+
+                decimationsTotal++;
 
                 MatrixXi faces(faceInd.size() + 2, 3);
                 faceInd.push_back(f1);
@@ -182,9 +203,11 @@ int main(int argc, char *argv[]) {
 
             int max_iter = iters.back();
             iters.pop_back();
+
             for (int i = 0; i < max_iter; i++) {
                 MeshModification mod = mods.back();
                 mods.pop_back();
+                decimationsTotal--;
 
                 for (int i = 0; i < mod.vertInd.size(); i++) {
                     V.row(mod.vertInd[i]) = mod.verts.row(i);
@@ -213,9 +236,11 @@ int main(int argc, char *argv[]) {
             break;
         case '1':
             collapse_edges(viewer);
+            cout << "Collapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
             break;
         case '2':
             uncollapse_edges(viewer);
+            cout << "Unollapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
             break;
         case '3':
             reset();
