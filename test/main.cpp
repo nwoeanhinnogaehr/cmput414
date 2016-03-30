@@ -85,6 +85,41 @@ void shortest_edge_and_midpoint(const int e, const Eigen::MatrixXd &V,
  */
 }
 
+void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
+                                const Eigen::MatrixXi &F,
+                                const Eigen::MatrixXi &E,
+                                const Eigen::VectorXi &EMAP,
+                                const Eigen::MatrixXi &EF,
+                                const Eigen::MatrixXi &EI, double &cost,
+                                RowVectorXd &p) {
+
+    // manhattan
+    //cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
+    // euclidean
+    cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
+    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+     //vectorsum
+    const int eflip = E(e, 0) > E(e, 1);
+    const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
+    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+    Eigen::RowVectorXd pointy(3);
+    pointy.setZero();
+    std::set<int> newEdges;
+    for( int i = 0; i < nV2Fd.size(); i++) {
+        for( int j = 0; j < 3; j++) {
+            int curVert = F.row(nV2Fd[i])[j];
+      if( curVert != E(e, 0) || curVert != E(e, 1)){
+        if(newEdges.insert(curVert).second){
+          pointy = (V.row(curVert) - p) + pointy;
+        }
+      }
+       }
+     }
+     cost = (pointy).norm();
+
+       //compute normals
+}
+
 int main(int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " [filename.(off|obj|ply)]" << endl;
     cout << "  [space]  toggle animation." << endl;
@@ -220,8 +255,7 @@ int main(int argc, char *argv[]) {
             viewer.data.clear();
             viewer.data.set_mesh(V, F);
             viewer.data.set_face_based(true);
-            cout << "Unollapsed an Edge\n"
-                 << "Decimations: " << decimationsTotal << "\n";
+            cout << "Uncollapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
         }
     };
 
@@ -244,33 +278,29 @@ int main(int argc, char *argv[]) {
         case '3':
             reset();
             viewer.draw();
-            save_screenshot(viewer, "before.png");
+            save_screenshot(viewer, "images/before.png");
             char fn[100];
             char command[512];
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i <= 100; i++) {
                 collapse_edges(viewer);
                 viewer.draw();
-                sprintf(fn, "after%03d.png", i);
+                sprintf(fn, "images/after%03d.png", i);
                 save_screenshot(viewer, fn);
-                sprintf(
-                    command,
-                    "composite before.png after%03d.png -compose difference "
-                    "diff%03d.png ",
-                    i, i);
+                sprintf(command, "composite images/before.png images/after%03d.png -compose difference "
+                                 "images/diff%03d.png ",
+                        i, i);
                 system(command);
-                sprintf(
-                    command,
-                    "composite after%03d.png after%03d.png -compose difference "
-                    "delta%03d.png ",
-                    i, i - 1, i);
+                sprintf(command, "composite images/after%03d.png images/after%03d.png -compose difference "
+                                 "images/delta%03d.png ",
+                        i, i - 1, i);
                 system(command);
                 cout << "Step " << i << " / 100" << endl;
             }
             break;
         case 'S':
         case 's':
-            save_screenshot(viewer, "screen.png");
-            cout << "saved screen to screen.png" << endl;
+            save_screenshot(viewer, "images/screen.png");
+            cout << "saved screen to images/screen.png" << endl;
             break;
         default:
             return false;
