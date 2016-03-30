@@ -50,7 +50,7 @@ void shortest_edge_and_midpoint(const int e, const Eigen::MatrixXd &V,
     // euclidean
     // cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
     //p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    // vectorsum 
+    // vectorsum
     // const int eflip = E(e, 0) > E(e, 1);
     // const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
     // p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
@@ -71,7 +71,7 @@ void shortest_edge_and_midpoint(const int e, const Eigen::MatrixXd &V,
 
        // compute normals
 
-    
+
     const int eflip = E(e, 0) > E(e, 1);
     const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
@@ -79,12 +79,12 @@ void shortest_edge_and_midpoint(const int e, const Eigen::MatrixXd &V,
     pointy.setZero();
     std::set<int> newEdges;
     for( int i = 0; i < nV2Fd.size(); i++) {
-      
+
       pointy = normals.row(nV2Fd[i]) + pointy;
     }
-    
-    cost = 1/((pointy).norm());	
-    
+
+    cost = 1/((pointy).norm());
+
 }
 
 int main(int argc, char *argv[]) {
@@ -195,6 +195,7 @@ int main(int argc, char *argv[]) {
                 viewer.data.set_face_based(true);
             }
         }
+        cout << "Collapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
         return false;
     };
 
@@ -221,6 +222,7 @@ int main(int argc, char *argv[]) {
             viewer.data.clear();
             viewer.data.set_mesh(V, F);
             viewer.data.set_face_based(true);
+            cout << "Unollapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
         }
     };
 
@@ -236,11 +238,9 @@ int main(int argc, char *argv[]) {
             break;
         case '1':
             collapse_edges(viewer);
-            cout << "Collapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
             break;
         case '2':
             uncollapse_edges(viewer);
-            cout << "Unollapsed an Edge\n" << "Decimations: " << decimationsTotal << "\n";
             break;
         case '3':
             reset();
