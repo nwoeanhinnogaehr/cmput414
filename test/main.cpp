@@ -112,7 +112,7 @@ void shortest_edge_and_midpoint4(const int e, const Eigen::MatrixXd &V,
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
 
 int main(int argc, char *argv[]) {
-    cout << "Usage: " << argv[0] << " [filename.(off|obj|ply)] -c[1/2/3]"
+    cout << "Usage: " << argv[0] << "[FILENAME].[off|obj|ply] [1|2|3|4]"
          << endl;
     cout << "  [space]  toggle animation." << endl;
     cout << "  'r'  reset." << endl;
