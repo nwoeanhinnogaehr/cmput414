@@ -1,12 +1,12 @@
 # Team KANA - Mesh Compression Project
 
-*Build Instructions:*
+**Build Instructions:**
 
   `cd /test`
   
   `./build.sh`
 
-*Run Instructions:*
+**Run Instructions:**
 
   `cd /test`
   
