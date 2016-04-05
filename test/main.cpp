@@ -38,18 +38,12 @@ void save_screenshot(viewer::Viewer &viewer, char *filename) {
 }
 
 void shortest_edge_and_midpoint1(const int e, const Eigen::MatrixXd &V,
-                                const Eigen::MatrixXi &F,
-                                const Eigen::MatrixXi &E,
-                                const Eigen::VectorXi &EMAP,
-                                const Eigen::MatrixXi &EF,
-                                const Eigen::MatrixXi &EI, double &cost,
-                                RowVectorXd &p) {
-    // manhattan
-    // cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
-    // euclidean
-    // cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
-    // p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-
+                                 const Eigen::MatrixXi &F,
+                                 const Eigen::MatrixXi &E,
+                                 const Eigen::VectorXi &EMAP,
+                                 const Eigen::MatrixXi &EF,
+                                 const Eigen::MatrixXi &EI, double &cost,
+                                 RowVectorXd &p) {
     // vectorsum
     const int eflip = E(e, 0) > E(e, 1);
     const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
@@ -68,21 +62,6 @@ void shortest_edge_and_midpoint1(const int e, const Eigen::MatrixXd &V,
         }
     }
     cost = (pointy).norm();
-
-    // compute normals
-    /* const int eflip = E(e, 0) > E(e, 1);
-     const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
-     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-     Eigen::RowVectorXd pointy(3);
-     pointy.setZero();
-     std::set<int> newEdges;
-     for( int i = 0; i < nV2Fd.size(); i++) {
-
-       pointy = normals.row(nV2Fd[i]) + pointy;
-     }
-
-     cost = 1/((pointy).norm());
- */
 }
 
 void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
@@ -92,13 +71,7 @@ void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EF,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
-
-    // manhattan
-    // cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
-    // euclidean
-    cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
-    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    // vectorsum
+    // compute normals
     const int eflip = E(e, 0) > E(e, 1);
     const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
@@ -106,56 +79,41 @@ void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
     pointy.setZero();
     std::set<int> newEdges;
     for (int i = 0; i < nV2Fd.size(); i++) {
-        for (int j = 0; j < 3; j++) {
-            int curVert = F.row(nV2Fd[i])[j];
-            if (curVert != E(e, 0) || curVert != E(e, 1)) {
-                if (newEdges.insert(curVert).second) {
-                    pointy = (V.row(curVert) - p) + pointy;
-                }
-            }
-        }
+        pointy = normals.row(nV2Fd[i]) + pointy;
     }
-    cost = (pointy).norm();
 
-    // compute normals
+    cost = 1 / ((pointy).norm());
 }
 
 void shortest_edge_and_midpoint3(const int e, const Eigen::MatrixXd &V,
-                                const Eigen::MatrixXi &F,
-                                const Eigen::MatrixXi &E,
-                                const Eigen::VectorXi &EMAP,
-                                const Eigen::MatrixXi &EF,
-                                const Eigen::MatrixXi &EI, double &cost,
-                                RowVectorXd &p) {
-
+                                 const Eigen::MatrixXi &F,
+                                 const Eigen::MatrixXi &E,
+                                 const Eigen::VectorXi &EMAP,
+                                 const Eigen::MatrixXi &EF,
+                                 const Eigen::MatrixXi &EI, double &cost,
+                                 RowVectorXd &p) {
     // manhattan
     cost = (V.row(E(e, 0)) - V.row(E(e, 1))).cwiseAbs().sum();
-    // euclidean
-    //cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-     //vectorsum
-    const int eflip = E(e, 0) > E(e, 1);
-    const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
-    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    Eigen::RowVectorXd pointy(3);
-    pointy.setZero();
-    std::set<int> newEdges;
-    for( int i = 0; i < nV2Fd.size(); i++) {
-        for( int j = 0; j < 3; j++) {
-            int curVert = F.row(nV2Fd[i])[j];
-      if( curVert != E(e, 0) || curVert != E(e, 1)){
-        if(newEdges.insert(curVert).second){
-          pointy = (V.row(curVert) - p) + pointy;
-        }
-      }
-       }
-     }
-     cost = (pointy).norm();
-
-       //compute normals
 }
+
+void shortest_edge_and_midpoint4(const int e, const Eigen::MatrixXd &V,
+                                 const Eigen::MatrixXi &F,
+                                 const Eigen::MatrixXi &E,
+                                 const Eigen::VectorXi &EMAP,
+                                 const Eigen::MatrixXi &EF,
+                                 const Eigen::MatrixXi &EI, double &cost,
+                                 RowVectorXd &p) {
+    // euclidean
+    cost = (V.row(E(e, 0)) - V.row(E(e, 1))).norm();
+    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+}
+
+auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
+
 int main(int argc, char *argv[]) {
-    cout << "Usage: " << argv[0] << " [filename.(off|obj|ply)] -c[1/2/3]" << endl;
+    cout << "Usage: " << argv[0] << " [filename.(off|obj|ply)] -c[1/2/3]"
+         << endl;
     cout << "  [space]  toggle animation." << endl;
     cout << "  'r'  reset." << endl;
     cout << "  '1'  edge collapse." << endl;
@@ -164,6 +122,22 @@ int main(int argc, char *argv[]) {
     string filename("fertility.off");
     if (argc >= 2) {
         filename = argv[1];
+    }
+    if (argc >= 3) {
+        switch (argv[2][0]) {
+        case '1':
+            shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
+            break;
+        case '2':
+            shortest_edge_and_midpoint = shortest_edge_and_midpoint2;
+            break;
+        case '3':
+            shortest_edge_and_midpoint = shortest_edge_and_midpoint3;
+            break;
+        case '4':
+            shortest_edge_and_midpoint = shortest_edge_and_midpoint4;
+            break;
+        }
     }
 
     read_triangle_mesh(filename, OV, OF);
@@ -199,20 +173,7 @@ int main(int argc, char *argv[]) {
             double cost = e;
             RowVectorXd p(1, 3);
 
-            switch (argv[2][2])
-            {
-              case '1':
-                 shortest_edge_and_midpoint1(e, V, F, E, EMAP, EF, EI, cost, p);
-                 break;
-              case '2':
-                 shortest_edge_and_midpoint2(e, V, F, E, EMAP, EF, EI, cost, p);
-                 break;
-              case '3':
-                 shortest_edge_and_midpoint3(e, V, F, E, EMAP, EF, EI, cost, p);
-                 break;
-              default: 
-                shortest_edge_and_midpoint(e, V, F, E, EMAP, EF, EI, cost, p);
-            }
+            shortest_edge_and_midpoint(e, V, F, E, EMAP, EF, EI, cost, p);
             C.row(e) = p;
             Qit[e] = Q.insert(std::pair<double, int>(cost, e)).first;
         }
