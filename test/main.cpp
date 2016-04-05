@@ -159,9 +159,12 @@ int main(int argc, char *argv[]) {
     std::vector<MeshModification> mods;
     std::vector<int> iters;
 
+    int decimationsTotal = 0;
     // Function to reset original mesh and data structures
     const auto &reset = [&]() {
+        decimationsTotal = 0;
         mods.clear();
+        iters.clear();
         F = OF;
         V = OV;
         edge_flaps(F, E, EMAP, EF, EI);
@@ -182,7 +185,6 @@ int main(int argc, char *argv[]) {
         viewer.data.set_mesh(V, F);
         viewer.data.set_face_based(true);
     };
-    int decimationsTotal = 0;
     const auto &collapse_edges = [&](igl::viewer::Viewer &viewer) -> bool {
         // If animating then collapse 10% of edges
         if (viewer.core.is_animating && !Q.empty()) {
