@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
         if (viewer.core.is_animating && !Q.empty()) {
             bool something_collapsed = false;
             // collapse edge
-            const int max_iter = std::ceil(1.0 * Q.size());
+            const int max_iter = 50;
 
             MatrixXd OOV = V;
             MatrixXi OOF = F;
@@ -197,17 +197,28 @@ int main(int argc, char *argv[]) {
             MatrixXi OEI = EI;
             VectorXi OEMAP = EMAP;
             num_collapsed = 0;
+
+            int TOTAL_FAIL = 0;                     //If a certain number of failures have occurred, we exit an infinte fail loop.
+
             for (int j = 0; j < max_iter; j++) {
                 int e, e1, e2, f1, f2;
                 std::vector<int> faceInd, vertInd;
 
+                if (Q.empty()) break;
+
                 if (!collapse_edge(shortest_edge_and_midpoint, V, F, E, EMAP,
                                    EF, EI, Q, Qit, C, e, e1, e2, f1, f2,
                                    faceInd)) {
-                    break;
+                    TOTAL_FAIL++;
+                    if (TOTAL_FAIL < 10000) {
+                        j--;
+                        continue;
+                    }
+                } else {
+                    decimationsTotal++;
+                    num_collapsed++;
                 }
 
-                decimationsTotal++;
 
                 MatrixXi faces(faceInd.size() + 2, 3);
                 faceInd.push_back(f1);
@@ -227,7 +238,6 @@ int main(int argc, char *argv[]) {
                 mods.push_back(
                     MeshModification(vertInd, verts, faceInd, faces));
                 something_collapsed = true;
-                num_collapsed++;
             }
             if (something_collapsed) {
                 iters.push_back(num_collapsed);
