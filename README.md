@@ -1,10 +1,13 @@
 # Team KANA - Mesh Compression Project
 
-Build Instructions:
+*Build Instructions:*
 
-  cd /test
-  ./build.sh
+  `cd /test`
+  
+  `./build.sh`
 
-Run Instructions:
-  cd /test
-  ./cmput414_bin [FILENAME].[off|obj|ply] [1|2|3|4]
+*Run Instructions:*
+
+  `cd /test`
+  
+  `./cmput414_bin [FILENAME].[off|obj|ply] [1|2|3|4]`
