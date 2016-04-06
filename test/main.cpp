@@ -212,10 +212,11 @@ int main(int argc, char *argv[]) {
                                    EF, EI, Q, Qit, C, e, e1, e2, f1, f2,
                                    faceInd)) {
                     TOTAL_FAIL++;
-                    if (TOTAL_FAIL < 10000) {
-                        j--;
-                        continue;
+                    j--;
+                    if (TOTAL_FAIL > 10000) {
+                        break;
                     }
+                    continue;
                 } else {
                     decimationsTotal++;
                     num_collapsed++;
