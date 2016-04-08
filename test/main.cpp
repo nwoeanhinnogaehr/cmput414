@@ -118,7 +118,7 @@ void shortest_edge_and_midpoint5(const int e, const Eigen::MatrixXd &V,
                                  RowVectorXd &p) {
     // angle between normals of adjacent faces
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    cost = cos(normals.row(EF(e, 0)).dot(normals.row(EF(e, 1)))) + PI;
+    cost = acos(normals.row(EF(e, 0)).dot(normals.row(EF(e, 1))));
 }
 
 void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
@@ -151,6 +151,7 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EF,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
+    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     int MAX_ITER = 10;
     cost = 0.0;
     for (int j = 0; j < 2; j++) {
@@ -265,7 +266,7 @@ int main(int argc, char *argv[]) {
         viewer.data.set_colors(color);
         viewer.data.set_face_based(true);
     };
-    
+
     const auto &collapse_edges = [&](igl::viewer::Viewer &viewer) -> bool {
         // If animating then collapse 10% of edges
         if (viewer.core.is_animating && !Q.empty()) {
