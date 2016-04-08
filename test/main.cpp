@@ -144,6 +144,39 @@ void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
     }
 }
 
+void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
+                                 const Eigen::MatrixXi &F,
+                                 const Eigen::MatrixXi &E,
+                                 const Eigen::VectorXi &EMAP,
+                                 const Eigen::MatrixXi &EF,
+                                 const Eigen::MatrixXi &EI, double &cost,
+                                 RowVectorXd &p) {
+    int MAX_ITER = 10;
+    cost = 0.0;
+    for (int j = 0; j < 2; j++) {
+        int face = EF(e, j);
+        for (int i = 0; i < MAX_ITER; i++) {
+            double max_angle = 0.0;
+            int max_k = 0;
+            for (int k = 0; k < 3; k++) {
+                int edge = EMAP(face + k * F.rows());
+                double angle = acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
+                if (angle > max_angle) {
+                    max_angle = angle;
+                    max_k = k;
+                }
+            }
+            cost += max_angle;
+            int edge = EMAP(face + max_k * F.rows());
+            if (EF(edge, 0) == face) {
+                face = EF(edge, 1);
+            } else {
+                face = EF(edge, 0);
+            }
+        }
+    }
+}
+
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
 
 int main(int argc, char *argv[]) {
@@ -177,6 +210,9 @@ int main(int argc, char *argv[]) {
             break;
         case '6':
             shortest_edge_and_midpoint = shortest_edge_and_midpoint6;
+            break;
+        case '7':
+            shortest_edge_and_midpoint = shortest_edge_and_midpoint7;
             break;
         }
     }
@@ -224,6 +260,9 @@ int main(int argc, char *argv[]) {
         num_collapsed = 0;
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
+        RowVectorXd color(3);
+        color << 1,1,1;
+        viewer.data.set_colors(color);
         viewer.data.set_face_based(true);
     };
     const auto &collapse_edges = [&](igl::viewer::Viewer &viewer) -> bool {
