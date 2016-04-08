@@ -121,6 +121,29 @@ void shortest_edge_and_midpoint5(const int e, const Eigen::MatrixXd &V,
     cost = cos(normals.row(EF(e, 0)).dot(normals.row(EF(e, 1)))) + PI;
 }
 
+void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
+                                 const Eigen::MatrixXi &F,
+                                 const Eigen::MatrixXi &E,
+                                 const Eigen::VectorXi &EMAP,
+                                 const Eigen::MatrixXi &EF,
+                                 const Eigen::MatrixXi &EI, double &cost,
+                                 RowVectorXd &p) {
+    // circulation angle sum
+    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+    const vector<int> c1 = circulation(e, false, F, E, EMAP, EF, EI);
+    const vector<int> c2 = circulation(e, true, F, E, EMAP, EF, EI);
+    set<int> circ;
+    circ.insert(c1.begin(), c1.end());
+    circ.insert(c2.begin(), c2.end());
+    cost = 0.0;
+    for (int face : circ) {
+        for (int j = 0; j < 3; j++) {
+            int edge = EMAP(face + j * F.rows());
+            cost += acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
+        }
+    }
+}
+
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
 
 int main(int argc, char *argv[]) {
@@ -151,6 +174,9 @@ int main(int argc, char *argv[]) {
             break;
         case '5':
             shortest_edge_and_midpoint = shortest_edge_and_midpoint5;
+            break;
+        case '6':
+            shortest_edge_and_midpoint = shortest_edge_and_midpoint6;
             break;
         }
     }
@@ -216,13 +242,15 @@ int main(int argc, char *argv[]) {
             VectorXi OEMAP = EMAP;
             num_collapsed = 0;
 
-            int TOTAL_FAIL = 0;                     //If a certain number of failures have occurred, we exit an infinte fail loop.
+            int TOTAL_FAIL = 0; // If a certain number of failures have
+                                // occurred, we exit an infinte fail loop.
 
             for (int j = 0; j < max_iter; j++) {
                 int e, e1, e2, f1, f2;
                 std::vector<int> faceInd, vertInd;
 
-                if (Q.empty()) break;
+                if (Q.empty())
+                    break;
 
                 if (!collapse_edge(shortest_edge_and_midpoint, V, F, E, EMAP,
                                    EF, EI, Q, Qit, C, e, e1, e2, f1, f2,
@@ -237,7 +265,6 @@ int main(int argc, char *argv[]) {
                     decimationsTotal++;
                     num_collapsed++;
                 }
-
 
                 MatrixXi faces(faceInd.size() + 2, 3);
                 faceInd.push_back(f1);
