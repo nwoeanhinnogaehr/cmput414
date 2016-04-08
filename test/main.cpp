@@ -238,6 +238,16 @@ int main(int argc, char *argv[]) {
     std::vector<int> iters;
 
     int decimationsTotal = 0;
+
+    const auto &reset_view = [&]() {
+        viewer.data.clear();
+        viewer.data.set_mesh(V, F);
+        RowVectorXd color(3);
+        color << 1,1,1;
+        viewer.data.set_colors(color);
+        viewer.data.set_face_based(true);
+    };
+
     // Function to reset original mesh and data structures
     const auto &reset = [&]() {
         decimationsTotal = 0;
@@ -259,12 +269,7 @@ int main(int argc, char *argv[]) {
             Qit[e] = Q.insert(std::pair<double, int>(cost, e)).first;
         }
         num_collapsed = 0;
-        viewer.data.clear();
-        viewer.data.set_mesh(V, F);
-        RowVectorXd color(3);
-        color << 1,1,1;
-        viewer.data.set_colors(color);
-        viewer.data.set_face_based(true);
+        reset_view();
     };
 
     const auto &collapse_edges = [&](igl::viewer::Viewer &viewer) -> bool {
@@ -327,9 +332,7 @@ int main(int argc, char *argv[]) {
             }
             if (something_collapsed) {
                 iters.push_back(num_collapsed);
-                viewer.data.clear();
-                viewer.data.set_mesh(V, F);
-                viewer.data.set_face_based(true);
+                reset_view();
             }
         }
         cout << "Collapsed an Edge\n"
@@ -357,9 +360,7 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            viewer.data.clear();
-            viewer.data.set_mesh(V, F);
-            viewer.data.set_face_based(true);
+            reset_view();
             cout << "Uncollapsed an Edge\n"
                  << "Decimations: " << decimationsTotal << "\n";
         }
