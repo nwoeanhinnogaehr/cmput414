@@ -109,6 +109,18 @@ void shortest_edge_and_midpoint4(const int e, const Eigen::MatrixXd &V,
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
 }
 
+void shortest_edge_and_midpoint5(const int e, const Eigen::MatrixXd &V,
+                                 const Eigen::MatrixXi &F,
+                                 const Eigen::MatrixXi &E,
+                                 const Eigen::VectorXi &EMAP,
+                                 const Eigen::MatrixXi &EF,
+                                 const Eigen::MatrixXi &EI, double &cost,
+                                 RowVectorXd &p) {
+    // angle between normals of adjacent faces
+    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+    cost = acos(normals.row(EF(e, 0)).dot(normals.row(EF(e, 1))));
+}
+
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
 
 int main(int argc, char *argv[]) {
@@ -136,6 +148,9 @@ int main(int argc, char *argv[]) {
             break;
         case '4':
             shortest_edge_and_midpoint = shortest_edge_and_midpoint4;
+            break;
+        case '5':
+            shortest_edge_and_midpoint = shortest_edge_and_midpoint5;
             break;
         }
     }
