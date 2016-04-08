@@ -130,13 +130,15 @@ void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
                                  RowVectorXd &p) {
     // circulation angle sum
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    const int eflip = E(e, 0) > E(e, 1);
-    const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
+    const vector<int> c1 = circulation(e, false, F, E, EMAP, EF, EI);
+    const vector<int> c2 = circulation(e, true, F, E, EMAP, EF, EI);
+    set<int> circ;
+    circ.insert(c1.begin(), c1.end());
+    circ.insert(c2.begin(), c2.end());
     cost = 0.0;
-    for (int i = 0; i < nV2Fd.size(); i++) {
-        int face = nV2Fd[i];
+    for (int face : circ) {
         for (int j = 0; j < 3; j++) {
-            int edge = EMAP(face + j*F.rows());
+            int edge = EMAP(face + j * F.rows());
             cost += acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
         }
     }
