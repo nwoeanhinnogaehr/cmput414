@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
         viewer.data.set_colors(colors);
-        viewer.data.set_face_based(true);
+        viewer.data.set_face_based(false);
     };
 
     // Function to reset original mesh and data structures
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
 
         C.resize(E.rows(), V.cols());
         colors.resize(V.rows(), 3);
-        VectorXd costs(F.rows());
+        VectorXd costs(V.rows());
         for (int e = 0; e < E.rows(); e++) {
             double cost = e;
             RowVectorXd p(1, 3);
@@ -278,8 +278,8 @@ int main(int argc, char *argv[]) {
             shortest_edge_and_midpoint(e, V, F, E, EMAP, EF, EI, cost, p);
             C.row(e) = p;
             Qit[e] = Q.insert(std::pair<double, int>(cost, e)).first;
-            costs(EF(e, 0)) = cost;
-            costs(EF(e, 1)) = cost;
+            costs(E(e, 0)) += cost;
+            costs(E(e, 1)) += cost;
         }
         jet(costs, true, colors);
         num_collapsed = 0;
