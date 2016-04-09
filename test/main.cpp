@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
     int num_collapsed;
     std::vector<MeshModification> mods;
     std::vector<int> iters;
-    int decimationsTotal = 0;
+    int total_decimations = 0;
 
     const auto &reset_view = [&]() {
         viewer.data.clear();
@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
 
     // Function to reset original mesh and data structures
     const auto &reset = [&]() {
-        decimationsTotal = 0;
+        total_decimations = 0;
         mods.clear();
         iters.clear();
         F = OF;
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
         if (viewer.core.is_animating && !Q.empty()) {
             bool something_collapsed = false;
             // collapse edge
-            const int max_iter = 50;
+            const int num_iters = 50;
 
             // Store the state from before the collapse so that it can be
             // reversed later.
@@ -351,10 +351,10 @@ int main(int argc, char *argv[]) {
             MatrixXi OOE = E;
             num_collapsed = 0;
 
-            int TOTAL_FAIL = 0; // If a certain number of failures have
+            int total_failures = 0; // If a certain number of failures have
                                 // occurred, we exit an infinte fail loop.
 
-            for (int j = 0; j < max_iter; j++) {
+            for (int j = 0; j < num_iters; j++) {
                 int e, e1, e2, f1, f2;
                 std::vector<int> faceInd, vertInd;
 
@@ -364,14 +364,14 @@ int main(int argc, char *argv[]) {
                 if (!collapse_edge(shortest_edge_and_midpoint, V, F, E, EMAP,
                                    EF, EI, Q, Qit, C, e, e1, e2, f1, f2,
                                    faceInd)) {
-                    TOTAL_FAIL++;
+                    total_failures++;
                     j--;
-                    if (TOTAL_FAIL > 10000) {
+                    if (total_failures > 1000) {
                         break;
                     }
                     continue;
                 } else {
-                    decimationsTotal++;
+                    total_decimations++;
                     num_collapsed++;
                 }
 
@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
             }
         }
         cout << "Collapsed an Edge\n"
-             << "Decimations: " << decimationsTotal << "\n";
+             << "Decimations: " << total_decimations << "\n";
         return false;
     };
 
@@ -413,7 +413,7 @@ int main(int argc, char *argv[]) {
             for (int i = 0; i < max_iter; i++) {
                 MeshModification mod = mods.back();
                 mods.pop_back();
-                decimationsTotal--;
+                total_decimations--;
 
                 for (int i = 0; i < mod.vertInd.size(); i++) {
                     V.row(mod.vertInd[i]) = mod.verts.row(i);
@@ -426,7 +426,7 @@ int main(int argc, char *argv[]) {
 
             reset_view();
             cout << "Uncollapsed an Edge\n"
-                 << "Decimations: " << decimationsTotal << "\n";
+                 << "Decimations: " << total_decimations << "\n";
         }
     };
 
