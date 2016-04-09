@@ -301,7 +301,6 @@ int main(int argc, char *argv[]) {
             break;
         }
         viewer.data.set_face_based(false);
-        viewer.core.camera_zoom = 2.0;
     };
 
     // Function to reset original mesh and data structures
@@ -520,5 +519,6 @@ int main(int argc, char *argv[]) {
     viewer.callback_key_pressed = key_down;
     viewer.callback_init = s_option;
     viewer.core.show_lines = false;
+    viewer.core.camera_zoom = 2.0;
     return viewer.launch();
 }
