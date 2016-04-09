@@ -5,6 +5,7 @@
 #include <Eigen/Core>
 #include <iostream>
 #include <set>
+#include <string>
 #include <unordered_set>
 #include <vector>
 #include <igl/per_face_normals.h>
@@ -16,11 +17,22 @@
 using namespace std;
 using namespace Eigen;
 using namespace igl;
+
+// V is current vertices, OV is originally loaded vertices
 MatrixXd V, OV;
+// F is current faces, OF is originally loaded faces
 MatrixXi F, OF;
 MatrixXd normals;
 MatrixXd colors;
 
+enum {
+    COST_VISUALIZATION,
+    SOLID,
+    MAX_COLOR_MODE,
+} color_mode = SOLID;
+
+// A mesh modification represents a single edge collapse operation in a
+// reversible format.
 struct MeshModification {
     std::vector<int> vertInd;
     MatrixXd verts;
@@ -39,6 +51,12 @@ void save_screenshot(viewer::Viewer &viewer, char *filename) {
     stbi_write_png(filename, width, height, 3, pixels, 3 * width);
     delete[] pixels;
 }
+
+// The cost functions are defined below.
+// The input is e, the index of the edge to collapse.
+// They have 2 outputs, cost and p.
+// Edges that produce lower cost will be collapsed first.
+// p is the midpoint to collapse both vertices of the edge to.
 
 void shortest_edge_and_midpoint1(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &F,
@@ -160,6 +178,7 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
     int MAX_ITER = 15;
     cost = 0.0;
     set<int> visited;
+    int n_sum = 0;
     for (int j = 0; j < 2; j++) {
         int face = EF(e, j);
         for (int i = 0; i < MAX_ITER; i++) {
@@ -178,44 +197,65 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
             }
             if (max_k == -1)
                 break;
-            cost += max_angle;
+            n_sum++;
+            cost += max_angle / n_sum;
             int edge = EMAP(face + max_k * F.rows());
             visited.insert(edge);
             if (EF(edge, 0) == face) {
                 face = EF(edge, 1);
-            } else {
+            } else if (EF(edge, 1) == face) {
                 face = EF(edge, 0);
+            } else {
+                // shouldn't happen
+                assert(false);
             }
         }
     }
+    cost /= n_sum;
 }
 
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
 
+int cost_function_n = 0;
 auto cost_functions = {shortest_edge_and_midpoint1, shortest_edge_and_midpoint2,
                        shortest_edge_and_midpoint3, shortest_edge_and_midpoint4,
                        shortest_edge_and_midpoint5, shortest_edge_and_midpoint6,
                        shortest_edge_and_midpoint7};
 
 int main(int argc, char *argv[]) {
-    cout << "Usage: " << argv[0] << "[FILENAME].[off|obj|ply] [1-7]"
+    cout << "Usage: " << argv[0] << " [FILENAME].[off|obj|ply] [1-7] [sl]"
          << endl;
+    cout << "where 1-7 is the cost function to use" << endl;
+    cout << "      s = save images at all decimation steps" << endl;
+    cout << "      l = disable lighting" << endl;
+    cout << endl;
+    cout << "Keybindings:" << endl;
     cout << "  [space]  toggle animation." << endl;
     cout << "  'r'  reset." << endl;
     cout << "  '1'  edge collapse." << endl;
     cout << "  '2'  vertex split." << endl;
+    cout << "  's'  save screenshot." << endl;
+    cout << "  'c'  switch color mode." << endl;
+    cout << "  'f'  cycle cost function." << endl;
+    cout << endl;
     // Load a closed manifold mesh
-    string filename("fertility.off");
+    string filename;
     if (argc >= 2) {
         filename = argv[1];
+    } else {
+        return 0;
     }
     if (argc >= 3) {
         int idx = stoi(argv[2]) - 1;
+        cost_function_n = idx;
         if (idx >= 0 && idx < cost_functions.size())
             shortest_edge_and_midpoint = *(cost_functions.begin() + idx);
     }
 
-    read_triangle_mesh(filename, OV, OF);
+    if (!read_triangle_mesh(filename, OV, OF)) {
+        cout << "could not read mesh from \"" << filename << "\"" << endl;
+        return 1;
+    }
 
     // compute normals
     per_face_normals(OV, OF, normals);
@@ -242,26 +282,35 @@ int main(int argc, char *argv[]) {
     MatrixXi EI;
 
     typedef std::set<std::pair<double, int>> PriorityQueue;
+    // Q stores the list of possible edge collapses and their costs
     PriorityQueue Q;
     std::vector<PriorityQueue::iterator> Qit;
     // If an edge were collapsed, we'd collapse it to these points:
     MatrixXd C;
+
+    // Keep some info on edge collapses for reversal and debug reasons
     int num_collapsed;
     std::vector<MeshModification> mods;
     std::vector<int> iters;
-
-    int decimationsTotal = 0;
+    int total_decimations = 0;
 
     const auto &reset_view = [&]() {
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
-        viewer.data.set_colors(colors);
+        switch (color_mode) {
+        case COST_VISUALIZATION:
+            viewer.data.set_colors(colors);
+            break;
+        case SOLID:
+            viewer.data.set_colors(RowVector3d(1.0, 1.0, 1.0));
+            break;
+        }
         viewer.data.set_face_based(false);
     };
 
     // Function to reset original mesh and data structures
     const auto &reset = [&]() {
-        decimationsTotal = 0;
+        total_decimations = 0;
         mods.clear();
         iters.clear();
         F = OF;
@@ -271,7 +320,9 @@ int main(int argc, char *argv[]) {
 
         C.resize(E.rows(), V.cols());
         colors.resize(V.rows(), 3);
+        colors.setZero();
         VectorXd costs(V.rows());
+        costs.setZero();
         for (int e = 0; e < E.rows(); e++) {
             double cost = e;
             RowVectorXd p(1, 3);
@@ -292,20 +343,19 @@ int main(int argc, char *argv[]) {
         if (viewer.core.is_animating && !Q.empty()) {
             bool something_collapsed = false;
             // collapse edge
-            const int max_iter = 50;
+            const int num_iters = 50;
 
-            MatrixXd OOV = V;
-            MatrixXi OOF = F;
-            MatrixXi OOE = E;
-            MatrixXi OEF = EF;
-            MatrixXi OEI = EI;
-            VectorXi OEMAP = EMAP;
+            // Store the state from before the collapse so that it can be
+            // reversed later.
+            MatrixXd prev_V = V;
+            MatrixXi prev_F = F;
+            MatrixXi prev_E = E;
             num_collapsed = 0;
 
-            int TOTAL_FAIL = 0; // If a certain number of failures have
+            int total_failures = 0; // If a certain number of failures have
                                 // occurred, we exit an infinte fail loop.
 
-            for (int j = 0; j < max_iter; j++) {
+            for (int j = 0; j < num_iters; j++) {
                 int e, e1, e2, f1, f2;
                 std::vector<int> faceInd, vertInd;
 
@@ -315,14 +365,14 @@ int main(int argc, char *argv[]) {
                 if (!collapse_edge(shortest_edge_and_midpoint, V, F, E, EMAP,
                                    EF, EI, Q, Qit, C, e, e1, e2, f1, f2,
                                    faceInd)) {
-                    TOTAL_FAIL++;
+                    total_failures++;
                     j--;
-                    if (TOTAL_FAIL > 10000) {
+                    if (total_failures > 1000) {
                         break;
                     }
                     continue;
                 } else {
-                    decimationsTotal++;
+                    total_decimations++;
                     num_collapsed++;
                 }
 
@@ -330,15 +380,15 @@ int main(int argc, char *argv[]) {
                 faceInd.push_back(f1);
                 faceInd.push_back(f2);
                 for (int i = 0; i < faceInd.size(); i++) {
-                    faces.row(i) = OOF.row(faceInd[i]);
+                    faces.row(i) = prev_F.row(faceInd[i]);
                     // cout << "ffF" << faces.row(i) << endl;
                 }
 
                 MatrixXd verts(2, 3);
-                vertInd.push_back(OOE(e, 0));
-                vertInd.push_back(OOE(e, 1));
+                vertInd.push_back(prev_E(e, 0));
+                vertInd.push_back(prev_E(e, 1));
                 for (int i = 0; i < vertInd.size(); i++) {
-                    verts.row(i) = OOV.row(vertInd[i]);
+                    verts.row(i) = prev_V.row(vertInd[i]);
                 }
 
                 mods.push_back(
@@ -351,7 +401,7 @@ int main(int argc, char *argv[]) {
             }
         }
         cout << "Collapsed an Edge\n"
-             << "Decimations: " << decimationsTotal << "\n";
+             << "Decimations: " << total_decimations << "\n";
         return false;
     };
 
@@ -364,7 +414,7 @@ int main(int argc, char *argv[]) {
             for (int i = 0; i < max_iter; i++) {
                 MeshModification mod = mods.back();
                 mods.pop_back();
-                decimationsTotal--;
+                total_decimations--;
 
                 for (int i = 0; i < mod.vertInd.size(); i++) {
                     V.row(mod.vertInd[i]) = mod.verts.row(i);
@@ -377,7 +427,7 @@ int main(int argc, char *argv[]) {
 
             reset_view();
             cout << "Uncollapsed an Edge\n"
-                 << "Decimations: " << decimationsTotal << "\n";
+                 << "Decimations: " << total_decimations << "\n";
         }
     };
 
@@ -385,29 +435,27 @@ int main(int argc, char *argv[]) {
         reset();
         viewer.draw();
 
- 
-
-	save_screenshot(viewer, "images/before.png");
-	char fn[100];
-	char command[512];
-	for (int i = 0; i <= 100; i++) {
-	  collapse_edges(viewer);
-	  viewer.draw();
-	  sprintf(fn, "images/after%03d.png", i);
-	  save_screenshot(viewer, fn);
-	  sprintf(command, "composite images/before.png "
-		  "images/after%03d.png -compose difference "
-		  "images/diff%03d.png ",
-		  i, i);
-	  system(command);
-	  sprintf(command, "composite images/after%03d.png "
-		  "images/after%03d.png -compose difference "
-		  "images/delta%03d.png ",
-		  i, i - 1, i);
-	  system(command);
-	  cout << "Step " << i << " / 100" << endl;
-	}
-	exit(EXIT_SUCCESS);
+        save_screenshot(viewer, "images/before.png");
+        char fn[100];
+        char command[512];
+        for (int i = 0; i <= 100; i++) {
+            collapse_edges(viewer);
+            viewer.draw();
+            sprintf(fn, "images/after%03d.png", i);
+            save_screenshot(viewer, fn);
+            sprintf(command, "composite images/before.png "
+                             "images/after%03d.png -compose difference "
+                             "images/diff%03d.png ",
+                    i, i);
+            system(command);
+            sprintf(command, "composite images/after%03d.png "
+                             "images/after%03d.png -compose difference "
+                             "images/delta%03d.png ",
+                    i, i - 1, i);
+            system(command);
+            cout << "Step " << i << " / 100" << endl;
+        }
+        exit(EXIT_SUCCESS);
 
     };
 
@@ -435,17 +483,38 @@ int main(int argc, char *argv[]) {
             save_screenshot(viewer, "images/screen.png");
             cout << "saved screen to images/screen.png" << endl;
             break;
+        case 'C':
+        case 'c':
+            ((int &)color_mode)++;
+            ((int &)color_mode) %= MAX_COLOR_MODE;
+            reset_view();
+            break;
+        case 'F':
+        case 'f':
+            cost_function_n++;
+            cost_function_n %= cost_functions.size();
+            shortest_edge_and_midpoint =
+                *(cost_functions.begin() + cost_function_n);
+            reset();
+            break;
         default:
             return false;
         }
         return true;
     };
+
     const auto &s_option = [&](igl::viewer::Viewer &viewer) -> bool {
         if (argc >= 4) {
-            switch (argv[3][0]) {
-            case 's':
-                save_images();
-                cout << "sdfsdf" << argv[3][0] << endl;
+            for (char c : string(argv[3])) {
+                switch (c) {
+                case 's':
+                    save_images();
+                    break;
+                case 'l':
+                    viewer.core.shininess = 1.0;
+                    viewer.core.lighting_factor = 0.0;
+                    break;
+                }
             }
         }
     };
@@ -455,5 +524,6 @@ int main(int argc, char *argv[]) {
     viewer.callback_key_pressed = key_down;
     viewer.callback_init = s_option;
     viewer.core.show_lines = false;
+    viewer.core.camera_zoom = 2.0;
     return viewer.launch();
 }
