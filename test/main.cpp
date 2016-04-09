@@ -132,7 +132,7 @@ void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     const vector<int> c1 = circulation(e, false, F, E, EMAP, EF, EI);
     const vector<int> c2 = circulation(e, true, F, E, EMAP, EF, EI);
-    set<int> circ;
+    unordered_set<int> circ;
     circ.insert(c1.begin(), c1.end());
     circ.insert(c2.begin(), c2.end());
     cost = 0.0;
@@ -152,23 +152,29 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    int MAX_ITER = 10;
+    int MAX_ITER = 15;
     cost = 0.0;
+    set<int> visited;
     for (int j = 0; j < 2; j++) {
         int face = EF(e, j);
         for (int i = 0; i < MAX_ITER; i++) {
             double max_angle = 0.0;
-            int max_k = 0;
+            int max_k = -1;
             for (int k = 0; k < 3; k++) {
                 int edge = EMAP(face + k * F.rows());
+                if (visited.find(edge) != visited.end())
+                    continue;
                 double angle = acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
                 if (angle > max_angle) {
                     max_angle = angle;
                     max_k = k;
                 }
             }
+            if (max_k == -1)
+                break;
             cost += max_angle;
             int edge = EMAP(face + max_k * F.rows());
+            visited.insert(edge);
             if (EF(edge, 0) == face) {
                 face = EF(edge, 1);
             } else {
@@ -243,7 +249,7 @@ int main(int argc, char *argv[]) {
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
         RowVectorXd color(3);
-        color << 1,1,1;
+        color << 1, 1, 1;
         viewer.data.set_colors(color);
         viewer.data.set_face_based(true);
     };
