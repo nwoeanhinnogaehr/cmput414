@@ -155,6 +155,7 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EF,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
+    // DFS angle sum
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     int MAX_ITER = 15;
     cost = 0.0;
@@ -389,7 +390,7 @@ int main(int argc, char *argv[]) {
 	save_screenshot(viewer, "images/before.png");
 	char fn[100];
 	char command[512];
-	for (int i = 0; i <= 2; i++) {
+	for (int i = 0; i <= 100; i++) {
 	  collapse_edges(viewer);
 	  viewer.draw();
 	  sprintf(fn, "images/after%03d.png", i);
