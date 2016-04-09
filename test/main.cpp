@@ -31,6 +31,7 @@ enum {
     MAX_COLOR_MODE,
 } color_mode = SOLID;
 
+// A mesh modification represents a single edge collapse operation in a reversible format.
 struct MeshModification {
     std::vector<int> vertInd;
     MatrixXd verts;
@@ -49,6 +50,12 @@ void save_screenshot(viewer::Viewer &viewer, char *filename) {
     stbi_write_png(filename, width, height, 3, pixels, 3 * width);
     delete[] pixels;
 }
+
+// The cost functions are defined below.
+// The input is e, the index of the edge to collapse.
+// They have 2 outputs, cost and p.
+// Edges that produce lower cost will be collapsed first.
+// p is the midpoint to collapse both vertices of the edge to.
 
 void shortest_edge_and_midpoint1(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &F,
@@ -484,6 +491,7 @@ int main(int argc, char *argv[]) {
         }
         return true;
     };
+
     const auto &s_option = [&](igl::viewer::Viewer &viewer) -> bool {
         if (argc >= 4) {
             for (char c : string(argv[3])) {
