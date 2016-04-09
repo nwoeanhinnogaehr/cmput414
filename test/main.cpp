@@ -17,7 +17,10 @@
 using namespace std;
 using namespace Eigen;
 using namespace igl;
+
+// V is current vertices, OV is originally loaded vertices
 MatrixXd V, OV;
+// F is current faces, OF is originally loaded faces
 MatrixXi F, OF;
 MatrixXd normals;
 MatrixXd colors;
@@ -262,14 +265,16 @@ int main(int argc, char *argv[]) {
     MatrixXi EI;
 
     typedef std::set<std::pair<double, int>> PriorityQueue;
+    // Q stores the list of possible edge collapses and their costs
     PriorityQueue Q;
     std::vector<PriorityQueue::iterator> Qit;
     // If an edge were collapsed, we'd collapse it to these points:
     MatrixXd C;
+
+    // Keep some info on edge collapses for reversal and debug reasons
     int num_collapsed;
     std::vector<MeshModification> mods;
     std::vector<int> iters;
-
     int decimationsTotal = 0;
 
     const auto &reset_view = [&]() {
@@ -324,12 +329,10 @@ int main(int argc, char *argv[]) {
             // collapse edge
             const int max_iter = 50;
 
+            // Store the state from before the collapse so that it can be reversed later.
             MatrixXd OOV = V;
             MatrixXi OOF = F;
             MatrixXi OOE = E;
-            MatrixXi OEF = EF;
-            MatrixXi OEI = EI;
-            VectorXi OEMAP = EMAP;
             num_collapsed = 0;
 
             int TOTAL_FAIL = 0; // If a certain number of failures have
