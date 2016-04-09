@@ -346,9 +346,9 @@ int main(int argc, char *argv[]) {
 
             // Store the state from before the collapse so that it can be
             // reversed later.
-            MatrixXd OOV = V;
-            MatrixXi OOF = F;
-            MatrixXi OOE = E;
+            MatrixXd prev_V = V;
+            MatrixXi prev_F = F;
+            MatrixXi prev_E = E;
             num_collapsed = 0;
 
             int total_failures = 0; // If a certain number of failures have
@@ -379,15 +379,15 @@ int main(int argc, char *argv[]) {
                 faceInd.push_back(f1);
                 faceInd.push_back(f2);
                 for (int i = 0; i < faceInd.size(); i++) {
-                    faces.row(i) = OOF.row(faceInd[i]);
+                    faces.row(i) = prev_F.row(faceInd[i]);
                     // cout << "ffF" << faces.row(i) << endl;
                 }
 
                 MatrixXd verts(2, 3);
-                vertInd.push_back(OOE(e, 0));
-                vertInd.push_back(OOE(e, 1));
+                vertInd.push_back(prev_E(e, 0));
+                vertInd.push_back(prev_E(e, 1));
                 for (int i = 0; i < vertInd.size(); i++) {
-                    verts.row(i) = OOV.row(vertInd[i]);
+                    verts.row(i) = prev_V.row(vertInd[i]);
                 }
 
                 mods.push_back(
