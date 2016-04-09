@@ -11,6 +11,7 @@
 #include <GLFW/glfw3.h>
 #include <stb_image_write.h>
 #include <igl/circulation.h>
+#include <igl/jet.h>
 
 using namespace std;
 using namespace Eigen;
@@ -18,6 +19,7 @@ using namespace igl;
 MatrixXd V, OV;
 MatrixXi F, OF;
 MatrixXd normals;
+MatrixXd colors;
 
 struct MeshModification {
     std::vector<int> vertInd;
@@ -252,7 +254,7 @@ int main(int argc, char *argv[]) {
     const auto &reset_view = [&]() {
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
-        viewer.data.set_colors(RowVector3d(1, 1, 1));
+        viewer.data.set_colors(colors);
         viewer.data.set_face_based(true);
     };
 
@@ -267,7 +269,8 @@ int main(int argc, char *argv[]) {
         Qit.resize(E.rows());
 
         C.resize(E.rows(), V.cols());
-        VectorXd costs(E.rows());
+        colors.resize(V.rows(), 3);
+        VectorXd costs(F.rows());
         for (int e = 0; e < E.rows(); e++) {
             double cost = e;
             RowVectorXd p(1, 3);
@@ -275,7 +278,10 @@ int main(int argc, char *argv[]) {
             shortest_edge_and_midpoint(e, V, F, E, EMAP, EF, EI, cost, p);
             C.row(e) = p;
             Qit[e] = Q.insert(std::pair<double, int>(cost, e)).first;
+            costs(EF(e, 0)) = cost;
+            costs(EF(e, 1)) = cost;
         }
+        jet(costs, true, colors);
         num_collapsed = 0;
         reset_view();
     };
