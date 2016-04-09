@@ -220,8 +220,24 @@ int main(int argc, char *argv[]) {
     igl::viewer::Viewer viewer;
 
     // Prepare array-based edge data structures and priority queue
+    // EMAP is a map from faces to edges.
+    // Index into it like EMAP(face + i*F.rows()) where i is an edge index
+    // between 0 and 2 corresponding to the three edges of a triangle.
     VectorXi EMAP;
-    MatrixXi E, EF, EI;
+
+    // E is a map from edges to vertices. Given some edge index e,
+    // E(e, 0) and E(e, 1) are the two vertices that the edge is composed of.
+    MatrixXi E;
+
+    // EF is a map from edges to faces. For some edge index e,
+    // EF(e, 0) and E(e, 1) are the two faces that contain the edge e.
+    MatrixXi EF;
+
+    // EI is a map from edges to face corners. For some edge index e,
+    // EI(e, 0) is the index i such that EMAP(EF(e, 0) + i*F.rows()) == e and
+    // EI(e, 1) is the index i such that EMAP(EF(e, 1) + i*F.rows()) == e.
+    MatrixXi EI;
+
     typedef std::set<std::pair<double, int>> PriorityQueue;
     PriorityQueue Q;
     std::vector<PriorityQueue::iterator> Qit;
