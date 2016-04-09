@@ -5,6 +5,7 @@
 #include <Eigen/Core>
 #include <iostream>
 #include <set>
+#include <unordered_set>
 #include <vector>
 #include <igl/per_face_normals.h>
 #include <GLFW/glfw3.h>
@@ -81,7 +82,7 @@ void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
     for (int i = 0; i < nV2Fd.size(); i++) {
         pointy = normals.row(nV2Fd[i]) + pointy;
     }
-	
+
 
     cost = 1 / ((pointy).norm());
 }
@@ -224,7 +225,7 @@ int main(int argc, char *argv[]) {
             break;
         }
     }
-    
+
 
 
     read_triangle_mesh(filename, OV, OF);
@@ -434,7 +435,7 @@ int main(int argc, char *argv[]) {
     const auto &s_option = [&](igl::viewer::Viewer &viewer) -> bool{
 
       if (argc >= 4) {
-	
+
 	switch (argv[3][0]) {
 	case 's':
 	   save_images();
@@ -443,7 +444,7 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    
+
     reset();
     viewer.core.is_animating = true;
     viewer.callback_key_pressed = key_down;
