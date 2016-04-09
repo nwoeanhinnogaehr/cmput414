@@ -83,7 +83,6 @@ void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
         pointy = normals.row(nV2Fd[i]) + pointy;
     }
 
-
     cost = 1 / ((pointy).norm());
 }
 
@@ -141,7 +140,8 @@ void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
     for (int face : circ) {
         for (int j = 0; j < 3; j++) {
             int edge = EMAP(face + j * F.rows());
-            cost += acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
+            cost +=
+                acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
         }
     }
 }
@@ -166,7 +166,8 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
                 int edge = EMAP(face + k * F.rows());
                 if (visited.find(edge) != visited.end())
                     continue;
-                double angle = acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
+                double angle = acos(
+                    normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
                 if (angle > max_angle) {
                     max_angle = angle;
                     max_k = k;
@@ -225,8 +226,6 @@ int main(int argc, char *argv[]) {
             break;
         }
     }
-
-
 
     read_triangle_mesh(filename, OV, OF);
 
@@ -376,32 +375,30 @@ int main(int argc, char *argv[]) {
         }
     };
 
-
     const auto &save_images = [&]() -> bool {
-	    reset();
+        reset();
+        viewer.draw();
+        save_screenshot(viewer, "images/before.png");
+        char fn[100];
+        char command[512];
+        for (int i = 0; i <= 100; i++) {
+            collapse_edges(viewer);
             viewer.draw();
-            save_screenshot(viewer, "images/before.png");
-            char fn[100];
-            char command[512];
-            for (int i = 0; i <= 100; i++) {
-                collapse_edges(viewer);
-                viewer.draw();
-                sprintf(fn, "images/after%03d.png", i);
-                save_screenshot(viewer, fn);
-                sprintf(command, "composite images/before.png "
-			"images/after%03d.png -compose difference "
-			"images/diff%03d.png ",
-                        i, i);
-                system(command);
-                sprintf(command, "composite images/after%03d.png "
-			"images/after%03d.png -compose difference "
-			"images/delta%03d.png ",
-                        i, i - 1, i);
-                system(command);
-                cout << "Step " << i << " / 100" << endl;
-            }
+            sprintf(fn, "images/after%03d.png", i);
+            save_screenshot(viewer, fn);
+            sprintf(command, "composite images/before.png "
+                             "images/after%03d.png -compose difference "
+                             "images/diff%03d.png ",
+                    i, i);
+            system(command);
+            sprintf(command, "composite images/after%03d.png "
+                             "images/after%03d.png -compose difference "
+                             "images/delta%03d.png ",
+                    i, i - 1, i);
+            system(command);
+            cout << "Step " << i << " / 100" << endl;
+        }
     };
-
 
     const auto &key_down = [&](igl::viewer::Viewer &viewer, unsigned char key,
                                int mod) -> bool {
@@ -420,7 +417,7 @@ int main(int argc, char *argv[]) {
             uncollapse_edges(viewer);
             break;
         case '3':
-	save_images();
+            save_images();
             break;
         case 'S':
         case 's':
@@ -432,18 +429,15 @@ int main(int argc, char *argv[]) {
         }
         return true;
     };
-    const auto &s_option = [&](igl::viewer::Viewer &viewer) -> bool{
-
-      if (argc >= 4) {
-
-	switch (argv[3][0]) {
-	case 's':
-	   save_images();
-	   cout << "sdfsdf" << argv[3][0] << endl;
-	}
-      }
+    const auto &s_option = [&](igl::viewer::Viewer &viewer) -> bool {
+        if (argc >= 4) {
+            switch (argv[3][0]) {
+            case 's':
+                save_images();
+                cout << "sdfsdf" << argv[3][0] << endl;
+            }
+        }
     };
-
 
     reset();
     viewer.core.is_animating = true;
