@@ -208,7 +208,12 @@ auto cost_functions = {shortest_edge_and_midpoint1, shortest_edge_and_midpoint2,
                        shortest_edge_and_midpoint7};
 
 int main(int argc, char *argv[]) {
-    cout << "Usage: " << argv[0] << "[FILENAME].[off|obj|ply] [1-7]" << endl;
+    cout << "Usage: " << argv[0] << " [FILENAME].[off|obj|ply] [1-7] [sl]" << endl;
+    cout << "where 1-7 is the cost function to use" << endl;
+    cout << "      s = save images at all decimation steps" << endl;
+    cout << "      l = disable lighting" << endl;
+    cout << endl;
+    cout << "Keybindings:" << endl;
     cout << "  [space]  toggle animation." << endl;
     cout << "  'r'  reset." << endl;
     cout << "  '1'  edge collapse." << endl;
@@ -217,9 +222,11 @@ int main(int argc, char *argv[]) {
     cout << "  'c'  switch color mode." << endl;
     cout << "  'f'  cycle cost function." << endl;
     // Load a closed manifold mesh
-    string filename("fertility.off");
+    string filename;
     if (argc >= 2) {
         filename = argv[1];
+    } else {
+        return 0;
     }
     if (argc >= 3) {
         int idx = stoi(argv[2]) - 1;
