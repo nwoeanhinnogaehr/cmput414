@@ -11,9 +11,30 @@ import numpy as np
 from itertools import combinations
 
 
+decimationCount = 101
+costLabels = {
+    '1': ('vector sum', 'b-'),
+    '2': ('normals', 'g-'),
+    '3': ('manhatten', 'r-'),
+    '4': ('euclidean', 'c-'),
+    '5': ('angles between adjacent faces', 'm-'),
+    '6': ('circulation angle sum', 'y-'),
+    '7': ('DFS angle sum', 'k-'),
+    '1-l': ('vector sum', 'b--'),
+    '2-l': ('normals', 'g--'),
+    '3-l': ('manhatten', 'r--'),
+    '4-l': ('euclidean', 'c--'),
+    '5-l': ('angles between adjacent faces', 'm--'),
+    '6-l': ('circulation angle sum', 'y--'),
+    '7-l': ('DFS angle sum', 'k--'),
+    }
+
+
+
+
 def countChangedPixels(newpath, filePrefix):
     i = 0
-    pixelList = [None]*101
+    pixelList = [None]*decimationCount
 
     while True:
         imgPath = newpath+filePrefix+str(i).zfill(3)+'.png'
@@ -30,10 +51,36 @@ def countChangedPixels(newpath, filePrefix):
     return pixelList
 
 
-def createSavePlot(pixelList, figure):
+
+def createSavePlot(pixelList, figure, costFun):
+    x = np.arange(0, decimationCount*50, 50)
     plt.figure(figure)
-    plt.plot(pixelList)
+    plt.plot(
+        x,
+        pixelList,
+        costLabels[str(costFun)][1],
+        label=costLabels[str(costFun)][0],
+    )
     plt.ylabel('Pixels Changed')
+    plt.xlabel('Decimations')
+    if figure == 0:
+        plt.title('Pixels Changed Between Original and Current Step')
+    elif figure == 1:
+        plt.title('Pixels Changed Between Steps')
+
+    # Now add the legend with some customizations.
+    legend = plt.legend(loc='upper center', shadow=True)
+    
+    # The frame is matplotlib.patches.Rectangle instance surrounding the legend.
+    frame = legend.get_frame()
+    frame.set_facecolor('0.90')
+    
+    # Set the fontsize
+    for label in legend.get_texts():
+        label.set_fontsize('large')
+        
+    for label in legend.get_lines():
+        label.set_linewidth(1.5)  # the legend line width
 
 
 
@@ -56,8 +103,9 @@ def main(argv):
         elif opt in ("-c", "--costFunction"):
             costFunction.extend(arg)
 
-    for i in xrange(1, len(costFunction)+1):
-        print list(combinations(costFunction, i))
+    costFunction = costFunction + [s + '-l' for s in costFunction]
+
+
 
     testName = inputfile + "_" + '_'.join(sorted(costFunction))
     path = os.path.dirname(os.path.abspath(__file__)) + r'/images/'
@@ -68,7 +116,10 @@ def main(argv):
     for function in costFunction:
         functionpath = newpath + function + r'/'
         os.makedirs(functionpath)
-        command = "./cmput414_bin ./" + inputfile + " " + function + " " + "s"
+        if '-l' in function:
+            command = "./cmput414_bin ./" + inputfile + " " + function[0] + " " + "sl"
+        else:
+            command = "./cmput414_bin ./" + inputfile + " " + function + " " + "s"
         os.system(command)
         files = glob.iglob(os.path.join(path, "*.png"))
         for file in files:
@@ -76,16 +127,16 @@ def main(argv):
                 shutil.move(file, functionpath)
         diffCostData.update({function: countChangedPixels(functionpath, 'diff')})
         deltaCostData.update({function: countChangedPixels(functionpath, 'delta')})
-    print diffCostData
-    print deltaCostData
+
 
     graphpath = newpath + "graphs/"
     os.makedirs(graphpath)
     for i in xrange(1, len(costFunction)+1):
         for graph in list(combinations(costFunction, i)):
             for j in graph:
-                createSavePlot(diffCostData[j], 0)
-                createSavePlot(deltaCostData[j], 1)
+                # 0 is diff, 1 is delta
+                createSavePlot(diffCostData[j], 0, j)
+                createSavePlot(deltaCostData[j], 1, j)
             plt.figure(0)
             plt.savefig(graphpath+'_'.join(graph)+'diff_graph.png')
             plt.clf()

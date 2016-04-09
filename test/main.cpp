@@ -74,7 +74,7 @@ void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EF,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
-    // use normals and surface area
+    // use normals
     const int eflip = E(e, 0) > E(e, 1);
     const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
@@ -389,7 +389,7 @@ int main(int argc, char *argv[]) {
 	save_screenshot(viewer, "images/before.png");
 	char fn[100];
 	char command[512];
-	for (int i = 0; i <= 100; i++) {
+	for (int i = 0; i <= 2; i++) {
 	  collapse_edges(viewer);
 	  viewer.draw();
 	  sprintf(fn, "images/after%03d.png", i);
