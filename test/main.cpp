@@ -376,7 +376,7 @@ int main(int argc, char *argv[]) {
             save_screenshot(viewer, "images/before.png");
             char fn[100];
             char command[512];
-            for (int i = 0; i <= 100; i++) {
+            for (int i = 0; i <= 10; i++) {
                 collapse_edges(viewer);
                 viewer.draw();
                 sprintf(fn, "images/after%03d.png", i);
@@ -393,6 +393,7 @@ int main(int argc, char *argv[]) {
                 system(command);
                 cout << "Step " << i << " / 100" << endl;
             }
+	    exit(EXIT_SUCCESS);
     };
 
 
