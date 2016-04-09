@@ -5,11 +5,13 @@
 #include <Eigen/Core>
 #include <iostream>
 #include <set>
+#include <unordered_set>
 #include <vector>
 #include <igl/per_face_normals.h>
 #include <GLFW/glfw3.h>
 #include <stb_image_write.h>
 #include <igl/circulation.h>
+#include <igl/jet.h>
 
 using namespace std;
 using namespace Eigen;
@@ -17,6 +19,7 @@ using namespace igl;
 MatrixXd V, OV;
 MatrixXi F, OF;
 MatrixXd normals;
+MatrixXd colors;
 
 struct MeshModification {
     std::vector<int> vertInd;
@@ -81,7 +84,6 @@ void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
     for (int i = 0; i < nV2Fd.size(); i++) {
         pointy = normals.row(nV2Fd[i]) + pointy;
     }
-	
 
     cost = 1 / ((pointy).norm());
 }
@@ -133,14 +135,15 @@ void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     const vector<int> c1 = circulation(e, false, F, E, EMAP, EF, EI);
     const vector<int> c2 = circulation(e, true, F, E, EMAP, EF, EI);
-    set<int> circ;
+    unordered_set<int> circ;
     circ.insert(c1.begin(), c1.end());
     circ.insert(c2.begin(), c2.end());
     cost = 0.0;
     for (int face : circ) {
         for (int j = 0; j < 3; j++) {
             int edge = EMAP(face + j * F.rows());
-            cost += acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
+            cost +=
+                acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
         }
     }
 }
@@ -153,23 +156,30 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    int MAX_ITER = 10;
+    int MAX_ITER = 15;
     cost = 0.0;
+    set<int> visited;
     for (int j = 0; j < 2; j++) {
         int face = EF(e, j);
         for (int i = 0; i < MAX_ITER; i++) {
             double max_angle = 0.0;
-            int max_k = 0;
+            int max_k = -1;
             for (int k = 0; k < 3; k++) {
                 int edge = EMAP(face + k * F.rows());
-                double angle = acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
+                if (visited.find(edge) != visited.end())
+                    continue;
+                double angle = acos(
+                    normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
                 if (angle > max_angle) {
                     max_angle = angle;
                     max_k = k;
                 }
             }
+            if (max_k == -1)
+                break;
             cost += max_angle;
             int edge = EMAP(face + max_k * F.rows());
+            visited.insert(edge);
             if (EF(edge, 0) == face) {
                 face = EF(edge, 1);
             } else {
@@ -181,8 +191,13 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
 
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
 
+auto cost_functions = {shortest_edge_and_midpoint1, shortest_edge_and_midpoint2,
+                       shortest_edge_and_midpoint3, shortest_edge_and_midpoint4,
+                       shortest_edge_and_midpoint5, shortest_edge_and_midpoint6,
+                       shortest_edge_and_midpoint7};
+
 int main(int argc, char *argv[]) {
-    cout << "Usage: " << argv[0] << "[FILENAME].[off|obj|ply] [1|2|3|4]"
+    cout << "Usage: " << argv[0] << "[FILENAME].[off|obj|ply] [1-7]"
          << endl;
     cout << "  [space]  toggle animation." << endl;
     cout << "  'r'  reset." << endl;
@@ -194,32 +209,10 @@ int main(int argc, char *argv[]) {
         filename = argv[1];
     }
     if (argc >= 3) {
-        switch (argv[2][0]) {
-        case '1':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
-            break;
-        case '2':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint2;
-            break;
-        case '3':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint3;
-            break;
-        case '4':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint4;
-            break;
-        case '5':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint5;
-            break;
-        case '6':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint6;
-            break;
-        case '7':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint7;
-            break;
-        }
+        int idx = stoi(argv[2]) - 1;
+        if (idx >= 0 && idx < cost_functions.size())
+            shortest_edge_and_midpoint = *(cost_functions.begin() + idx);
     }
-    
-
 
     read_triangle_mesh(filename, OV, OF);
 
@@ -229,8 +222,24 @@ int main(int argc, char *argv[]) {
     igl::viewer::Viewer viewer;
 
     // Prepare array-based edge data structures and priority queue
+    // EMAP is a map from faces to edges.
+    // Index into it like EMAP(face + i*F.rows()) where i is an edge index
+    // between 0 and 2 corresponding to the three edges of a triangle.
     VectorXi EMAP;
-    MatrixXi E, EF, EI;
+
+    // E is a map from edges to vertices. Given some edge index e,
+    // E(e, 0) and E(e, 1) are the two vertices that the edge is composed of.
+    MatrixXi E;
+
+    // EF is a map from edges to faces. For some edge index e,
+    // EF(e, 0) and E(e, 1) are the two faces that contain the edge e.
+    MatrixXi EF;
+
+    // EI is a map from edges to face corners. For some edge index e,
+    // EI(e, 0) is the index i such that EMAP(EF(e, 0) + i*F.rows()) == e and
+    // EI(e, 1) is the index i such that EMAP(EF(e, 1) + i*F.rows()) == e.
+    MatrixXi EI;
+
     typedef std::set<std::pair<double, int>> PriorityQueue;
     PriorityQueue Q;
     std::vector<PriorityQueue::iterator> Qit;
@@ -245,10 +254,8 @@ int main(int argc, char *argv[]) {
     const auto &reset_view = [&]() {
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
-        RowVectorXd color(3);
-        color << 1,1,1;
-        viewer.data.set_colors(color);
-        viewer.data.set_face_based(true);
+        viewer.data.set_colors(colors);
+        viewer.data.set_face_based(false);
     };
 
     // Function to reset original mesh and data structures
@@ -262,7 +269,8 @@ int main(int argc, char *argv[]) {
         Qit.resize(E.rows());
 
         C.resize(E.rows(), V.cols());
-        VectorXd costs(E.rows());
+        colors.resize(V.rows(), 3);
+        VectorXd costs(V.rows());
         for (int e = 0; e < E.rows(); e++) {
             double cost = e;
             RowVectorXd p(1, 3);
@@ -270,7 +278,10 @@ int main(int argc, char *argv[]) {
             shortest_edge_and_midpoint(e, V, F, E, EMAP, EF, EI, cost, p);
             C.row(e) = p;
             Qit[e] = Q.insert(std::pair<double, int>(cost, e)).first;
+            costs(E(e, 0)) += cost;
+            costs(E(e, 1)) += cost;
         }
+        jet(costs, true, colors);
         num_collapsed = 0;
         reset_view();
     };
@@ -369,33 +380,35 @@ int main(int argc, char *argv[]) {
         }
     };
 
-
     const auto &save_images = [&]() -> bool {
-	    reset();
-            viewer.draw();
-            save_screenshot(viewer, "images/before.png");
-            char fn[100];
-            char command[512];
-            for (int i = 0; i <= 10; i++) {
-                collapse_edges(viewer);
-                viewer.draw();
-                sprintf(fn, "images/after%03d.png", i);
-                save_screenshot(viewer, fn);
-                sprintf(command, "composite images/before.png "
-			"images/after%03d.png -compose difference "
-			"images/diff%03d.png ",
-                        i, i);
-                system(command);
-                sprintf(command, "composite images/after%03d.png "
-			"images/after%03d.png -compose difference "
-			"images/delta%03d.png ",
-                        i, i - 1, i);
-                system(command);
-                cout << "Step " << i << " / 100" << endl;
-            }
-	    exit(EXIT_SUCCESS);
-    };
+        reset();
+        viewer.draw();
 
+ 
+
+	save_screenshot(viewer, "images/before.png");
+	char fn[100];
+	char command[512];
+	for (int i = 0; i <= 10; i++) {
+	  collapse_edges(viewer);
+	  viewer.draw();
+	  sprintf(fn, "images/after%03d.png", i);
+	  save_screenshot(viewer, fn);
+	  sprintf(command, "composite images/before.png "
+		  "images/after%03d.png -compose difference "
+		  "images/diff%03d.png ",
+		  i, i);
+	  system(command);
+	  sprintf(command, "composite images/after%03d.png "
+		  "images/after%03d.png -compose difference "
+		  "images/delta%03d.png ",
+		  i, i - 1, i);
+	  system(command);
+	  cout << "Step " << i << " / 100" << endl;
+	}
+	exit(EXIT_SUCCESS);
+
+    };
 
     const auto &key_down = [&](igl::viewer::Viewer &viewer, unsigned char key,
                                int mod) -> bool {
@@ -414,7 +427,7 @@ int main(int argc, char *argv[]) {
             uncollapse_edges(viewer);
             break;
         case '3':
-	save_images();
+            save_images();
             break;
         case 'S':
         case 's':
@@ -426,19 +439,16 @@ int main(int argc, char *argv[]) {
         }
         return true;
     };
-    const auto &s_option = [&](igl::viewer::Viewer &viewer) -> bool{
-
-      if (argc >= 4) {
-	
-	switch (argv[3][0]) {
-	case 's':
-	   save_images();
-	   cout << "sdfsdf" << argv[3][0] << endl;
-	}
-      }
+    const auto &s_option = [&](igl::viewer::Viewer &viewer) -> bool {
+        if (argc >= 4) {
+            switch (argv[3][0]) {
+            case 's':
+                save_images();
+                cout << "sdfsdf" << argv[3][0] << endl;
+            }
+        }
     };
 
-    
     reset();
     viewer.core.is_animating = true;
     viewer.callback_key_pressed = key_down;
