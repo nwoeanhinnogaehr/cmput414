@@ -236,6 +236,7 @@ int main(int argc, char *argv[]) {
     cout << "  's'  save screenshot." << endl;
     cout << "  'c'  switch color mode." << endl;
     cout << "  'f'  cycle cost function." << endl;
+    cout << endl;
     // Load a closed manifold mesh
     string filename;
     if (argc >= 2) {
@@ -250,7 +251,10 @@ int main(int argc, char *argv[]) {
             shortest_edge_and_midpoint = *(cost_functions.begin() + idx);
     }
 
-    read_triangle_mesh(filename, OV, OF);
+    if (!read_triangle_mesh(filename, OV, OF)) {
+        cout << "could not read mesh from \"" << filename << "\"" << endl;
+        return 1;
+    }
 
     // compute normals
     per_face_normals(OV, OF, normals);
