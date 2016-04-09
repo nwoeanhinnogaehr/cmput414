@@ -252,9 +252,7 @@ int main(int argc, char *argv[]) {
     const auto &reset_view = [&]() {
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
-        RowVectorXd color(3);
-        color << 1, 1, 1;
-        viewer.data.set_colors(color);
+        viewer.data.set_colors(RowVector3d(1, 1, 1));
         viewer.data.set_face_based(true);
     };
 
