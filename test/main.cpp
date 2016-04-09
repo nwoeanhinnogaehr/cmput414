@@ -5,6 +5,7 @@
 #include <Eigen/Core>
 #include <iostream>
 #include <set>
+#include <string>
 #include <unordered_set>
 #include <vector>
 #include <igl/per_face_normals.h>
@@ -270,13 +271,12 @@ int main(int argc, char *argv[]) {
         switch (color_mode) {
         case COST_VISUALIZATION:
             viewer.data.set_colors(colors);
-            viewer.data.set_face_based(false);
             break;
         case SOLID:
             viewer.data.set_colors(RowVector3d(1.0, 1.0, 1.0));
-            viewer.data.set_face_based(true);
             break;
         }
+        viewer.data.set_face_based(false);
         viewer.core.camera_zoom = 2.0;
     };
 
@@ -476,10 +476,16 @@ int main(int argc, char *argv[]) {
     };
     const auto &s_option = [&](igl::viewer::Viewer &viewer) -> bool {
         if (argc >= 4) {
-            switch (argv[3][0]) {
-            case 's':
-                save_images();
-                cout << "sdfsdf" << argv[3][0] << endl;
+            for (char c : string(argv[3])) {
+                switch (c) {
+                case 's':
+                    save_images();
+                    break;
+                case 'l':
+                    viewer.core.shininess = 1.0;
+                    viewer.core.lighting_factor = 0.0;
+                    break;
+                }
             }
         }
     };
