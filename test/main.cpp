@@ -189,8 +189,13 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
 
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
 
+auto cost_functions = {shortest_edge_and_midpoint1, shortest_edge_and_midpoint2,
+                       shortest_edge_and_midpoint3, shortest_edge_and_midpoint4,
+                       shortest_edge_and_midpoint5, shortest_edge_and_midpoint6,
+                       shortest_edge_and_midpoint7};
+
 int main(int argc, char *argv[]) {
-    cout << "Usage: " << argv[0] << "[FILENAME].[off|obj|ply] [1|2|3|4]"
+    cout << "Usage: " << argv[0] << "[FILENAME].[off|obj|ply] [1-7]"
          << endl;
     cout << "  [space]  toggle animation." << endl;
     cout << "  'r'  reset." << endl;
@@ -202,29 +207,9 @@ int main(int argc, char *argv[]) {
         filename = argv[1];
     }
     if (argc >= 3) {
-        switch (argv[2][0]) {
-        case '1':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
-            break;
-        case '2':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint2;
-            break;
-        case '3':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint3;
-            break;
-        case '4':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint4;
-            break;
-        case '5':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint5;
-            break;
-        case '6':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint6;
-            break;
-        case '7':
-            shortest_edge_and_midpoint = shortest_edge_and_midpoint7;
-            break;
-        }
+        int idx = stoi(argv[2]) - 1;
+        if (idx >= 0 && idx < cost_functions.size())
+            shortest_edge_and_midpoint = *(cost_functions.begin() + idx);
     }
 
     read_triangle_mesh(filename, OV, OF);
