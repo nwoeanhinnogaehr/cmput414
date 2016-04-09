@@ -31,7 +31,8 @@ enum {
     MAX_COLOR_MODE,
 } color_mode = SOLID;
 
-// A mesh modification represents a single edge collapse operation in a reversible format.
+// A mesh modification represents a single edge collapse operation in a
+// reversible format.
 struct MeshModification {
     std::vector<int> vertInd;
     MatrixXd verts;
@@ -196,13 +197,16 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
             if (max_k == -1)
                 break;
             n_sum++;
-            cost += max_angle/n_sum;
+            cost += max_angle / n_sum;
             int edge = EMAP(face + max_k * F.rows());
             visited.insert(edge);
             if (EF(edge, 0) == face) {
                 face = EF(edge, 1);
-            } else {
+            } else if (EF(edge, 1) == face) {
                 face = EF(edge, 0);
+            } else {
+                // shouldn't happen
+                assert(false);
             }
         }
     }
@@ -218,7 +222,8 @@ auto cost_functions = {shortest_edge_and_midpoint1, shortest_edge_and_midpoint2,
                        shortest_edge_and_midpoint7};
 
 int main(int argc, char *argv[]) {
-    cout << "Usage: " << argv[0] << " [FILENAME].[off|obj|ply] [1-7] [sl]" << endl;
+    cout << "Usage: " << argv[0] << " [FILENAME].[off|obj|ply] [1-7] [sl]"
+         << endl;
     cout << "where 1-7 is the cost function to use" << endl;
     cout << "      s = save images at all decimation steps" << endl;
     cout << "      l = disable lighting" << endl;
@@ -336,7 +341,8 @@ int main(int argc, char *argv[]) {
             // collapse edge
             const int max_iter = 50;
 
-            // Store the state from before the collapse so that it can be reversed later.
+            // Store the state from before the collapse so that it can be
+            // reversed later.
             MatrixXd OOV = V;
             MatrixXi OOF = F;
             MatrixXi OOE = E;
@@ -475,15 +481,16 @@ int main(int argc, char *argv[]) {
             break;
         case 'C':
         case 'c':
-            ((int&)color_mode)++;
-            ((int&)color_mode) %= MAX_COLOR_MODE;
+            ((int &)color_mode)++;
+            ((int &)color_mode) %= MAX_COLOR_MODE;
             reset_view();
             break;
         case 'F':
         case 'f':
             cost_function_n++;
             cost_function_n %= cost_functions.size();
-            shortest_edge_and_midpoint = *(cost_functions.begin() + cost_function_n);
+            shortest_edge_and_midpoint =
+                *(cost_functions.begin() + cost_function_n);
             reset();
             break;
         default:
