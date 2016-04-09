@@ -21,6 +21,12 @@ MatrixXi F, OF;
 MatrixXd normals;
 MatrixXd colors;
 
+enum {
+    COST_VISUALIZATION,
+    SOLID,
+    MAX_COLOR_MODE,
+} color_mode = SOLID;
+
 struct MeshModification {
     std::vector<int> vertInd;
     MatrixXd verts;
@@ -159,6 +165,7 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
     int MAX_ITER = 15;
     cost = 0.0;
     set<int> visited;
+    int n_sum = 0;
     for (int j = 0; j < 2; j++) {
         int face = EF(e, j);
         for (int i = 0; i < MAX_ITER; i++) {
@@ -177,7 +184,8 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
             }
             if (max_k == -1)
                 break;
-            cost += max_angle;
+            n_sum++;
+            cost += max_angle/n_sum;
             int edge = EMAP(face + max_k * F.rows());
             visited.insert(edge);
             if (EF(edge, 0) == face) {
@@ -187,22 +195,26 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
             }
         }
     }
+    cost /= n_sum;
 }
 
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
 
+int cost_function_n = 0;
 auto cost_functions = {shortest_edge_and_midpoint1, shortest_edge_and_midpoint2,
                        shortest_edge_and_midpoint3, shortest_edge_and_midpoint4,
                        shortest_edge_and_midpoint5, shortest_edge_and_midpoint6,
                        shortest_edge_and_midpoint7};
 
 int main(int argc, char *argv[]) {
-    cout << "Usage: " << argv[0] << "[FILENAME].[off|obj|ply] [1-7]"
-         << endl;
+    cout << "Usage: " << argv[0] << "[FILENAME].[off|obj|ply] [1-7]" << endl;
     cout << "  [space]  toggle animation." << endl;
     cout << "  'r'  reset." << endl;
     cout << "  '1'  edge collapse." << endl;
     cout << "  '2'  vertex split." << endl;
+    cout << "  's'  save screenshot." << endl;
+    cout << "  'c'  switch color mode." << endl;
+    cout << "  'f'  cycle cost function." << endl;
     // Load a closed manifold mesh
     string filename("fertility.off");
     if (argc >= 2) {
@@ -210,6 +222,7 @@ int main(int argc, char *argv[]) {
     }
     if (argc >= 3) {
         int idx = stoi(argv[2]) - 1;
+        cost_function_n = idx;
         if (idx >= 0 && idx < cost_functions.size())
             shortest_edge_and_midpoint = *(cost_functions.begin() + idx);
     }
@@ -254,8 +267,17 @@ int main(int argc, char *argv[]) {
     const auto &reset_view = [&]() {
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
-        viewer.data.set_colors(colors);
-        viewer.data.set_face_based(false);
+        switch (color_mode) {
+        case COST_VISUALIZATION:
+            viewer.data.set_colors(colors);
+            viewer.data.set_face_based(false);
+            break;
+        case SOLID:
+            viewer.data.set_colors(RowVector3d(1.0, 1.0, 1.0));
+            viewer.data.set_face_based(true);
+            break;
+        }
+        viewer.core.camera_zoom = 2.0;
     };
 
     // Function to reset original mesh and data structures
@@ -270,7 +292,9 @@ int main(int argc, char *argv[]) {
 
         C.resize(E.rows(), V.cols());
         colors.resize(V.rows(), 3);
+        colors.setZero();
         VectorXd costs(V.rows());
+        costs.setZero();
         for (int e = 0; e < E.rows(); e++) {
             double cost = e;
             RowVectorXd p(1, 3);
@@ -384,29 +408,27 @@ int main(int argc, char *argv[]) {
         reset();
         viewer.draw();
 
- 
-
-	save_screenshot(viewer, "images/before.png");
-	char fn[100];
-	char command[512];
-	for (int i = 0; i <= 100; i++) {
-	  collapse_edges(viewer);
-	  viewer.draw();
-	  sprintf(fn, "images/after%03d.png", i);
-	  save_screenshot(viewer, fn);
-	  sprintf(command, "composite images/before.png "
-		  "images/after%03d.png -compose difference "
-		  "images/diff%03d.png ",
-		  i, i);
-	  system(command);
-	  sprintf(command, "composite images/after%03d.png "
-		  "images/after%03d.png -compose difference "
-		  "images/delta%03d.png ",
-		  i, i - 1, i);
-	  system(command);
-	  cout << "Step " << i << " / 100" << endl;
-	}
-	exit(EXIT_SUCCESS);
+        save_screenshot(viewer, "images/before.png");
+        char fn[100];
+        char command[512];
+        for (int i = 0; i <= 100; i++) {
+            collapse_edges(viewer);
+            viewer.draw();
+            sprintf(fn, "images/after%03d.png", i);
+            save_screenshot(viewer, fn);
+            sprintf(command, "composite images/before.png "
+                             "images/after%03d.png -compose difference "
+                             "images/diff%03d.png ",
+                    i, i);
+            system(command);
+            sprintf(command, "composite images/after%03d.png "
+                             "images/after%03d.png -compose difference "
+                             "images/delta%03d.png ",
+                    i, i - 1, i);
+            system(command);
+            cout << "Step " << i << " / 100" << endl;
+        }
+        exit(EXIT_SUCCESS);
 
     };
 
@@ -433,6 +455,19 @@ int main(int argc, char *argv[]) {
         case 's':
             save_screenshot(viewer, "images/screen.png");
             cout << "saved screen to images/screen.png" << endl;
+            break;
+        case 'C':
+        case 'c':
+            ((int&)color_mode)++;
+            ((int&)color_mode) %= MAX_COLOR_MODE;
+            reset_view();
+            break;
+        case 'F':
+        case 'f':
+            cost_function_n++;
+            cost_function_n %= cost_functions.size();
+            shortest_edge_and_midpoint = *(cost_functions.begin() + cost_function_n);
+            reset();
             break;
         default:
             return false;
