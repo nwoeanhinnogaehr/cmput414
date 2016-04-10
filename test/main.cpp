@@ -16,7 +16,6 @@
 
 using namespace std;
 using namespace Eigen;
-using namespace igl;
 
 // V is current vertices, OV is originally loaded vertices
 MatrixXd V, OV;
@@ -24,6 +23,8 @@ MatrixXd V, OV;
 MatrixXi F, OF;
 MatrixXd normals;
 MatrixXd colors;
+
+igl::viewer::Viewer viewer;
 
 enum {
     COST_VISUALIZATION,
@@ -43,7 +44,7 @@ struct MeshModification {
         : vertInd(vertInd), verts(verts), faceInd(faceInd), faces(faces) {}
 };
 
-void save_screenshot(viewer::Viewer &viewer, char *filename) {
+void save_screenshot(igl::viewer::Viewer &viewer, char *filename) {
     int width, height;
     glfwGetWindowSize(viewer.window, &width, &height);
     char *pixels = new char[3 * width * height];
@@ -67,7 +68,7 @@ void shortest_edge_and_midpoint1(const int e, const Eigen::MatrixXd &V,
                                  RowVectorXd &p) {
     // vectorsum
     const int eflip = E(e, 0) > E(e, 1);
-    const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
+    const std::vector<int> nV2Fd = igl::circulation(e, !eflip, F, E, EMAP, EF, EI);
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     Eigen::RowVectorXd pointy(3);
     pointy.setZero();
@@ -94,7 +95,7 @@ void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
                                  RowVectorXd &p) {
     // use normals and surface area
     const int eflip = E(e, 0) > E(e, 1);
-    const std::vector<int> nV2Fd = circulation(e, !eflip, F, E, EMAP, EF, EI);
+    const std::vector<int> nV2Fd = igl::circulation(e, !eflip, F, E, EMAP, EF, EI);
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     Eigen::RowVectorXd pointy(3);
     pointy.setZero();
@@ -137,9 +138,25 @@ void shortest_edge_and_midpoint5(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EF,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
-    // angle between normals of adjacent faces
+    // circulation angle sum
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    cost = acos(normals.row(EF(e, 0)).dot(normals.row(EF(e, 1))));
+    const vector<int> c1 = igl::circulation(e, false, F, E, EMAP, EF, EI);
+    const vector<int> c2 = igl::circulation(e, true, F, E, EMAP, EF, EI);
+    unordered_set<int> circ;
+    circ.insert(c1.begin(), c1.end());
+    circ.insert(c2.begin(), c2.end());
+    cost = 0.0;
+    for (int face : circ) {
+        for (int j = 0; j < 3; j++) {
+            int edge = EMAP(face + j * F.rows());
+            Vector3d eye = viewer.core.camera_eye.cast<double>();
+            eye.normalize();
+            cost +=
+                max(acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))))/3.14159/2.0,
+                0.5 *(2.0 - abs(eye.dot(normals.row(EF(edge, 0)))) - abs(eye.dot(normals.row(EF(edge, 1))))));
+
+        }
+    }
 }
 
 void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
@@ -151,8 +168,8 @@ void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
                                  RowVectorXd &p) {
     // circulation angle sum
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    const vector<int> c1 = circulation(e, false, F, E, EMAP, EF, EI);
-    const vector<int> c2 = circulation(e, true, F, E, EMAP, EF, EI);
+    const vector<int> c1 = igl::circulation(e, false, F, E, EMAP, EF, EI);
+    const vector<int> c2 = igl::circulation(e, true, F, E, EMAP, EF, EI);
     unordered_set<int> circ;
     circ.insert(c1.begin(), c1.end());
     circ.insert(c2.begin(), c2.end());
@@ -162,6 +179,7 @@ void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
             int edge = EMAP(face + j * F.rows());
             cost +=
                 acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
+
         }
     }
 }
@@ -251,15 +269,13 @@ int main(int argc, char *argv[]) {
             shortest_edge_and_midpoint = *(cost_functions.begin() + idx);
     }
 
-    if (!read_triangle_mesh(filename, OV, OF)) {
+    if (!igl::read_triangle_mesh(filename, OV, OF)) {
         cout << "could not read mesh from \"" << filename << "\"" << endl;
         return 1;
     }
 
     // compute normals
-    per_face_normals(OV, OF, normals);
-
-    igl::viewer::Viewer viewer;
+    igl::per_face_normals(OV, OF, normals);
 
     // Prepare array-based edge data structures and priority queue
     // EMAP is a map from faces to edges.
@@ -314,7 +330,7 @@ int main(int argc, char *argv[]) {
         iters.clear();
         F = OF;
         V = OV;
-        edge_flaps(F, E, EMAP, EF, EI);
+        igl::edge_flaps(F, E, EMAP, EF, EI);
         Qit.resize(E.rows());
 
         C.resize(E.rows(), V.cols());
@@ -332,7 +348,7 @@ int main(int argc, char *argv[]) {
             costs(E(e, 0)) += cost;
             costs(E(e, 1)) += cost;
         }
-        jet(costs, true, colors);
+        igl::jet(costs, true, colors);
         num_collapsed = 0;
         reset_view();
     };
