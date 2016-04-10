@@ -13,6 +13,8 @@
 #include <stb_image_write.h>
 #include <igl/circulation.h>
 #include <igl/jet.h>
+#include <igl/signed_distance.h>
+#include <fstream>
 
 using namespace std;
 using namespace Eigen;
@@ -230,6 +232,18 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
         }
     }
     cost /= n_sum;
+}
+
+double generate_distance_field() {
+    VectorXd S;
+    VectorXi I;
+    MatrixXd C, N;
+    igl::signed_distance(OV, V, F, igl::SIGNED_DISTANCE_TYPE_PSEUDONORMAL, S, I, C, N);
+    double sum;
+    for (int i = 0; i < S.size(); i++) {
+        sum += abs(S(i));
+    }
+    return sum;
 }
 
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
@@ -454,8 +468,10 @@ int main(int argc, char *argv[]) {
         save_screenshot(viewer, "images/before.png");
         char fn[100];
         char command[512];
+        ofstream distfile("surface_distances", ofstream::trunc);
         for (int i = 0; i <= 100; i++) {
             collapse_edges(viewer);
+            distfile << generate_distance_field() << endl;
             viewer.draw();
             sprintf(fn, "images/after%03d.png", i);
             save_screenshot(viewer, fn);
@@ -471,6 +487,7 @@ int main(int argc, char *argv[]) {
             system(command);
             cout << "Step " << i << " / 100" << endl;
         }
+        distfile.close();
         exit(EXIT_SUCCESS);
 
     };
@@ -512,6 +529,10 @@ int main(int argc, char *argv[]) {
             shortest_edge_and_midpoint =
                 *(cost_functions.begin() + cost_function_n);
             reset();
+            break;
+        case 'g':
+        case 'G':
+            cout << generate_distance_field() << endl;
             break;
         default:
             return false;
