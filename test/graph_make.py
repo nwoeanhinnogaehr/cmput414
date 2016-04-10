@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from scipy import misc
 import numpy as np
 from itertools import combinations
+from PIL import ImageFilter
+from scipy.ndimage.filters import gaussian_filter
 
 
 decimationCount = 101
@@ -46,6 +48,20 @@ def countChangedPixels(newpath, filePrefix):
                 continue
             else:
                 break
+        
+
+        if '052' in imgPath:
+            print imgPath
+            print filePrefix
+            blurred = gaussian_filter(face, sigma=20)
+            blurred[blurred > .5] = 1
+            blurred[blurred <= .5] = 0
+            plt.imshow(blurred,aspect="auto")
+            plt.show()
+            plt.clf()
+            plt.imshow(face,aspect="auto")
+            plt.show()
+            plt.clf()
         pixelList[i] =  np.count_nonzero(face)
         i += 1
     return pixelList
