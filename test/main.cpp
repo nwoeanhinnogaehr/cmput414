@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
         char fn[100];
         char command[512];
         ofstream distfile("surface_distances", ofstream::trunc);
-        for (int i = 0; i <= 100; i++) {
+        for (int i = 0; i <= 50; i++) {
             collapse_edges(viewer);
             distfile << generate_distance_field() << endl;
             viewer.draw();
