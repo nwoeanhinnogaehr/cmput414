@@ -17,16 +17,16 @@ costLabels = {
     '2': ('normals', 'g-'),
     '3': ('manhatten', 'r-'),
     '4': ('euclidean', 'c-'),
-    '5': ('angles between adjacent faces', 'm-'),
+    '5': ('circulation angle sum, view weight', 'm-'),
     '6': ('circulation angle sum', 'y-'),
     '7': ('DFS angle sum', 'k-'),
-    '1-l': ('vector sum', 'b--'),
-    '2-l': ('normals', 'g--'),
-    '3-l': ('manhatten', 'r--'),
-    '4-l': ('euclidean', 'c--'),
-    '5-l': ('angles between adjacent faces', 'm--'),
-    '6-l': ('circulation angle sum', 'y--'),
-    '7-l': ('DFS angle sum', 'k--'),
+    '1l': ('vector sum', 'b--'),
+    '2l': ('normals', 'g--'),
+    '3l': ('manhatten', 'r--'),
+    '4l': ('euclidean', 'c--'),
+    '5l': ('circulation angle sum, view weights', 'm--'),
+    '6l': ('circulation angle sum', 'y--'),
+    '7l': ('DFS angle sum', 'k--'),
     }
 
 
@@ -59,7 +59,7 @@ def createSavePlot(pixelList, figure, costFun):
         x,
         pixelList,
         costLabels[str(costFun)][1],
-        label=costLabels[str(costFun)][0],
+        label= costFun + costLabels[str(costFun)][0],
     )
     plt.ylabel('Pixels Changed')
     plt.xlabel('Decimations')
@@ -103,7 +103,7 @@ def main(argv):
         elif opt in ("-c", "--costFunction"):
             costFunction.extend(arg)
 
-    costFunction = costFunction + [s + '-l' for s in costFunction]
+    costFunction = costFunction + [s + 'l' for s in costFunction]
 
 
 
@@ -116,8 +116,8 @@ def main(argv):
     for function in costFunction:
         functionpath = newpath + function + r'/'
         os.makedirs(functionpath)
-        if '-l' in function:
-            command = "./cmput414_bin ./" + inputfile + " " + function[0] + " " + "sl"
+        if 'l' in function:
+            command = "./cmput414_bin ./" + inputfile + " " + function[0] + " " + "ls"
         else:
             command = "./cmput414_bin ./" + inputfile + " " + function + " " + "s"
         os.system(command)
