@@ -141,25 +141,13 @@ void shortest_edge_and_midpoint5(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EF,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
-    // circulation angle sum
+    // Perceived edge length
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
-    const vector<int> c1 = igl::circulation(e, false, F, E, EMAP, EF, EI);
-    const vector<int> c2 = igl::circulation(e, true, F, E, EMAP, EF, EI);
-    unordered_set<int> circ;
-    circ.insert(c1.begin(), c1.end());
-    circ.insert(c2.begin(), c2.end());
-    cost = 0.0;
-    for (int face : circ) {
-        for (int j = 0; j < 3; j++) {
-            int edge = EMAP(face + j * F.rows());
-            Vector3d eye = viewer.core.camera_eye.cast<double>();
-            eye.normalize();
-            cost +=
-                max(acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))))/3.14159/2.0,
-                0.5 *(2.0 - abs(eye.dot(normals.row(EF(edge, 0)))) - abs(eye.dot(normals.row(EF(edge, 1))))));
+    Vector3d eye = viewer.core.camera_eye.cast<double>();
+    eye.normalize();
+    cost = acos(normals.row(EF(e, 0)).dot(normals.row(EF(e, 1)))) *
+                abs(eye.dot(normals.row(EF(e, 0)))) * abs(eye.dot(normals.row(EF(e, 1))));
 
-        }
-    }
 }
 
 void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
@@ -235,6 +223,17 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
     cost /= n_sum;
 }
 
+void shortest_edge_and_midpoint8(const int e, const Eigen::MatrixXd &V,
+                                 const Eigen::MatrixXi &F,
+                                 const Eigen::MatrixXi &E,
+                                 const Eigen::VectorXi &EMAP,
+                                 const Eigen::MatrixXi &EF,
+                                 const Eigen::MatrixXi &EI, double &cost,
+                                 RowVectorXd &p) {
+    p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
+    cost = rand();
+}
+
 double generate_distance_field() {
     VectorXd S;
     VectorXi I;
@@ -259,7 +258,7 @@ int cost_function_n = 0;
 auto cost_functions = {shortest_edge_and_midpoint1, shortest_edge_and_midpoint2,
                        shortest_edge_and_midpoint3, shortest_edge_and_midpoint4,
                        shortest_edge_and_midpoint5, shortest_edge_and_midpoint6,
-                       shortest_edge_and_midpoint7};
+                       shortest_edge_and_midpoint7, shortest_edge_and_midpoint8};
 
 int main(int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " [FILENAME].[off|obj|ply] [1-7] [sl]"
