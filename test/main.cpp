@@ -93,7 +93,7 @@ void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EF,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
-    // use normals and surface area
+    // use normals
     const int eflip = E(e, 0) > E(e, 1);
     const std::vector<int> nV2Fd = igl::circulation(e, !eflip, F, E, EMAP, EF, EI);
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
@@ -191,6 +191,7 @@ void shortest_edge_and_midpoint7(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EF,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
+    // DFS angle sum
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     int MAX_ITER = 15;
     cost = 0.0;
