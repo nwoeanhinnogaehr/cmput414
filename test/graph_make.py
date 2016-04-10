@@ -48,23 +48,13 @@ def countChangedPixels(newpath, filePrefix):
                 continue
             else:
                 break
-        
-
-        if '052' in imgPath:
-            print imgPath
-            print filePrefix
-            blurred = gaussian_filter(face, sigma=20)
-            blurred[blurred > .5] = 1
-            blurred[blurred <= .5] = 0
-            plt.imshow(blurred,aspect="auto")
-            plt.show()
-            plt.clf()
-            plt.imshow(face,aspect="auto")
-            plt.show()
-            plt.clf()
         pixelList[i] =  np.count_nonzero(face)
         i += 1
     return pixelList
+
+
+
+
 
 
 
@@ -75,7 +65,7 @@ def createSavePlot(pixelList, figure, costFun):
         x,
         pixelList,
         costLabels[str(costFun)][1],
-        label= costFun + costLabels[str(costFun)][0],
+        label= costLabels[str(costFun)][0],
     )
     plt.ylabel('Pixels Changed')
     plt.xlabel('Decimations')
@@ -84,20 +74,14 @@ def createSavePlot(pixelList, figure, costFun):
     elif figure == 1:
         plt.title('Pixels Changed Between Steps')
 
-    # Now add the legend with some customizations.
-    legend = plt.legend(loc='upper center', shadow=True)
-    
-    # The frame is matplotlib.patches.Rectangle instance surrounding the legend.
-    frame = legend.get_frame()
-    frame.set_facecolor('0.90')
-    
-    # Set the fontsize
+
+    legend = plt.legend(loc='upper left')
+
     for label in legend.get_texts():
         label.set_fontsize('large')
         
     for label in legend.get_lines():
         label.set_linewidth(1.5)  # the legend line width
-
 
 
 def main(argv):
