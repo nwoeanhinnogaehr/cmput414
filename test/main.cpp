@@ -30,6 +30,7 @@ igl::viewer::Viewer viewer;
 
 enum {
     COST_VISUALIZATION,
+    DISTANCE_VISUALIZATION,
     SOLID,
     MAX_COLOR_MODE,
 } color_mode = SOLID;
@@ -243,6 +244,12 @@ double generate_distance_field() {
     for (int i = 0; i < S.size(); i++) {
         sum += abs(S(i)); //ahhahahha just discard the sign anyways
     }
+    if (color_mode == DISTANCE_VISUALIZATION) {
+        colors.resize(V.rows(), 3);
+        igl::jet(S, true, colors);
+        viewer.data.set_colors(colors);
+    }
+
     return sum;
 }
 
@@ -328,6 +335,8 @@ int main(int argc, char *argv[]) {
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
         switch (color_mode) {
+        case DISTANCE_VISUALIZATION:
+            generate_distance_field();
         case COST_VISUALIZATION:
             viewer.data.set_colors(colors);
             break;
