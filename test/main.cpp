@@ -241,7 +241,7 @@ double generate_distance_field() {
     igl::signed_distance(OV, V, F, igl::SIGNED_DISTANCE_TYPE_PSEUDONORMAL, S, I, C, N);
     double sum;
     for (int i = 0; i < S.size(); i++) {
-        sum += abs(S(i));
+        sum += abs(S(i)); //ahhahahha just discard the sign anyways
     }
     return sum;
 }
