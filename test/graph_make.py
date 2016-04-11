@@ -22,6 +22,7 @@ costLabels = {
     '5': ('circulation angle sum, view weight', 'm-'),
     '6': ('circulation angle sum', 'y-'),
     '7': ('DFS angle sum', 'k-'),
+	'8': ('Random', 'r-'),
     '1l': ('vector sum', 'b--'),
     '2l': ('normals', 'g--'),
     '3l': ('manhatten', 'r--'),
@@ -29,6 +30,7 @@ costLabels = {
     '5l': ('circulation angle sum, view weights', 'm--'),
     '6l': ('circulation angle sum', 'y--'),
     '7l': ('DFS angle sum', 'k--'),
+	'8l': ('Random', 'r--')
     }
 
 
