@@ -78,14 +78,14 @@ def createSavePlot(pixelList, figure, costFun):
         plt.title('Pixels Changed Between Original and Current Step')
     elif figure == 1:
         plt.title('Pixels Changed Between Steps')
-    elif figure == 1:
+    elif figure == 2:
         plt.title('Surface Distance Change Between Original and Current Step')
 
     legend = plt.legend(loc='upper left')
 
     for label in legend.get_texts():
         label.set_fontsize('large')
-        
+
     for label in legend.get_lines():
         label.set_linewidth(1.5)  # the legend line width
 
