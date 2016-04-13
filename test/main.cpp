@@ -71,7 +71,8 @@ void shortest_edge_and_midpoint1(const int e, const Eigen::MatrixXd &V,
                                  RowVectorXd &p) {
     // vectorsum
     const int eflip = E(e, 0) > E(e, 1);
-    const std::vector<int> nV2Fd = igl::circulation(e, !eflip, F, E, EMAP, EF, EI);
+    const std::vector<int> nV2Fd =
+        igl::circulation(e, !eflip, F, E, EMAP, EF, EI);
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     Eigen::RowVectorXd pointy(3);
     pointy.setZero();
@@ -98,7 +99,8 @@ void shortest_edge_and_midpoint2(const int e, const Eigen::MatrixXd &V,
                                  RowVectorXd &p) {
     // use normals
     const int eflip = E(e, 0) > E(e, 1);
-    const std::vector<int> nV2Fd = igl::circulation(e, !eflip, F, E, EMAP, EF, EI);
+    const std::vector<int> nV2Fd =
+        igl::circulation(e, !eflip, F, E, EMAP, EF, EI);
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     Eigen::RowVectorXd pointy(3);
     pointy.setZero();
@@ -146,8 +148,8 @@ void shortest_edge_and_midpoint5(const int e, const Eigen::MatrixXd &V,
     Vector3d eye = viewer.core.camera_eye.cast<double>();
     eye.normalize();
     cost = acos(normals.row(EF(e, 0)).dot(normals.row(EF(e, 1)))) *
-                abs(eye.dot(normals.row(EF(e, 0)))) * abs(eye.dot(normals.row(EF(e, 1))));
-
+           abs(eye.dot(normals.row(EF(e, 0)))) *
+           abs(eye.dot(normals.row(EF(e, 1))));
 }
 
 void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
@@ -170,7 +172,6 @@ void shortest_edge_and_midpoint6(const int e, const Eigen::MatrixXd &V,
             int edge = EMAP(face + j * F.rows());
             cost +=
                 acos(normals.row(EF(edge, 0)).dot(normals.row(EF(edge, 1))));
-
         }
     }
 }
@@ -230,18 +231,21 @@ void shortest_edge_and_midpoint8(const int e, const Eigen::MatrixXd &V,
                                  const Eigen::MatrixXi &EF,
                                  const Eigen::MatrixXi &EI, double &cost,
                                  RowVectorXd &p) {
+    // random
     p = 0.5 * (V.row(E(e, 0)) + V.row(E(e, 1)));
     cost = rand();
 }
 
+// compute the sum of the distance offsets from the original mesh
 double generate_distance_field() {
     VectorXd S;
     VectorXi I;
     MatrixXd C, N;
-    igl::signed_distance(OV, V, F, igl::SIGNED_DISTANCE_TYPE_PSEUDONORMAL, S, I, C, N);
+    igl::signed_distance(OV, V, F, igl::SIGNED_DISTANCE_TYPE_PSEUDONORMAL, S, I,
+                         C, N);
     double sum;
     for (int i = 0; i < S.size(); i++) {
-        sum += abs(S(i)); //ahhahahha just discard the sign anyways
+        sum += abs(S(i)); // ahhahahha just discard the sign anyways
     }
     if (color_mode == DISTANCE_VISUALIZATION) {
         colors.resize(V.rows(), 3);
@@ -255,10 +259,11 @@ double generate_distance_field() {
 auto shortest_edge_and_midpoint = shortest_edge_and_midpoint1;
 
 int cost_function_n = 0;
-auto cost_functions = {shortest_edge_and_midpoint1, shortest_edge_and_midpoint2,
-                       shortest_edge_and_midpoint3, shortest_edge_and_midpoint4,
-                       shortest_edge_and_midpoint5, shortest_edge_and_midpoint6,
-                       shortest_edge_and_midpoint7, shortest_edge_and_midpoint8};
+auto cost_functions = {
+    shortest_edge_and_midpoint1, shortest_edge_and_midpoint2,
+    shortest_edge_and_midpoint3, shortest_edge_and_midpoint4,
+    shortest_edge_and_midpoint5, shortest_edge_and_midpoint6,
+    shortest_edge_and_midpoint7, shortest_edge_and_midpoint8};
 
 int main(int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " [FILENAME].[off|obj|ply] [1-7] [sl]"
@@ -391,7 +396,7 @@ int main(int argc, char *argv[]) {
             num_collapsed = 0;
 
             int total_failures = 0; // If a certain number of failures have
-                                // occurred, we exit an infinte fail loop.
+                                    // occurred, we exit an infinte fail loop.
 
             for (int j = 0; j < num_iters; j++) {
                 int e, e1, e2, f1, f2;
@@ -443,6 +448,7 @@ int main(int argc, char *argv[]) {
         return false;
     };
 
+    // function to reverse edge collapse
     const auto &uncollapse_edges = [&](igl::viewer::Viewer &viewer) -> bool {
         if (viewer.core.is_animating && !mods.empty() && !iters.empty()) {
 
