@@ -11,6 +11,16 @@
   > `cd /test`
   >
   > `./cmput414_bin [FILENAME].[off|obj|ply] [1|2|3|4|5|6|7|8]`
+  >
+    where
+    1 = vector sum
+    2 = normals
+    3 = manhattan
+    4 = euclidean
+    5 = view weight
+    6 = circulation angle sum
+    7 = DFS angle sum
+    8 = random
 
 **Use Instructions.**
 
