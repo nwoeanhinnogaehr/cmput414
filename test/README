@@ -7,7 +7,7 @@ git clone --recursive https://github.com/libigl/libigl.git
 mkdir -p libigl/include/GL
 curl https://www.opengl.org/registry/api/GL/glcorearb.h > libigl/include/GL/glcorearb.h
 cd cmput414/test
-mkdir build
-cd build
-cmake ..
-make -j8
+./build.sh
+
+Example usage:
+./cmput414_bin cow.obj 6
